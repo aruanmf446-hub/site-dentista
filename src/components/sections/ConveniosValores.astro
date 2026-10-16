@@ -1,0 +1,168 @@
+---
+/**
+ * Faixa Convênios + Valores (lado a lado como no design). Se apenas um
+ * estiver ativo, ocupa a largura toda. Valores é desligado por padrão.
+ */
+import site from '@/lib/site';
+import Eyebrow from '@/components/ui/Eyebrow.astro';
+import Title from '@/components/ui/Title.astro';
+import { isPlaceholder } from '@/lib/placeholders';
+import { Image } from 'astro:assets';
+interface Props {
+  convenios: boolean;
+  valores: boolean;
+  numero?: string | undefined;
+}
+const { convenios, valores, numero } = Astro.props;
+const { c } = site;
+const both = convenios && valores;
+---
+
+<div class:list={['cv', { 'cv--both': both }]}>
+  {
+    convenios && (
+      <section id="convenios" class="cv__block" aria-labelledby="conv-title" data-section="convenios">
+        <Eyebrow numero={numero} texto="Convênios" modulo="Módulo opcional" />
+        <Title id="conv-title" class="cv__title" text={c.convenios.titulo} data-reveal="title" />
+        <ul role="list" class="cv__grid" style={`--cols:${both ? 3 : 4}`} data-reveal="grid">
+          {c.convenios.itens.map((it) => (
+            <li class:list={['cv__cell', { 'cv__cell--ph': isPlaceholder(it.nome) }]}>
+              {it.logo ? (
+                typeof it.logo === 'string' ? (
+                  <img src={it.logo} alt={it.nome} loading="lazy" />
+                ) : (
+                  <Image src={it.logo} alt={it.nome} height={48} loading="lazy" />
+                )
+              ) : (
+                <span>{it.nome}</span>
+              )}
+              {it.observacao && <small>{it.observacao}</small>}
+            </li>
+          ))}
+        </ul>
+        {c.convenios.observacao && <p class="cv__note">{c.convenios.observacao}</p>}
+      </section>
+    )
+  }
+  {
+    valores && (
+      <section id="valores" class="cv__block" aria-labelledby="val-title" data-section="valores">
+        <Eyebrow numero={convenios ? undefined : numero} texto="Valores" modulo="Módulo opcional" />
+        <Title id="val-title" class="cv__title" text={c.valores.titulo} data-reveal="title" />
+        <dl class="cv__prices" data-reveal="rows">
+          {c.valores.itens.map((v) => (
+            <div>
+              <dt>{v.item}</dt>
+              <dd>{v.valor}</dd>
+            </div>
+          ))}
+        </dl>
+        <p class="cv__small">{c.valores.observacao}</p>
+      </section>
+    )
+  }
+</div>
+
+<style>
+  .cv {
+    display: grid;
+    gap: 96px;
+  }
+  .cv--both {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .cv__title {
+    margin-top: 22px;
+    font-family: var(--f-serif);
+    font-size: var(--fs-h2-sm);
+    line-height: 1.05;
+  }
+  .cv__grid {
+    margin: 32px 0 0;
+    padding: 0;
+    display: grid;
+    grid-template-columns: repeat(var(--cols), minmax(0, 1fr));
+    border-top: 1px solid var(--c-line);
+    border-left: 1px solid var(--c-line);
+  }
+  .cv__cell {
+    min-height: 96px;
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    border-right: 1px solid var(--c-line);
+    border-bottom: 1px solid var(--c-line);
+    font-size: 13px;
+    color: var(--c-ink-2);
+    text-align: center;
+  }
+  .cv__cell--ph {
+    color: var(--c-faint);
+  }
+  .cv__cell img {
+    max-height: 48px;
+    width: auto;
+    filter: grayscale(1);
+    opacity: 0.85;
+    transition:
+      filter 0.3s,
+      opacity 0.3s;
+  }
+  .cv__cell:hover img {
+    filter: none;
+    opacity: 1;
+  }
+  .cv__cell small {
+    font-size: 11px;
+    color: var(--c-muted);
+  }
+  .cv__note {
+    margin-top: 22px;
+    font-size: 15px;
+    line-height: 1.6;
+    color: var(--c-text);
+  }
+  .cv__prices {
+    margin: 32px 0 0;
+    border-top: 1px solid var(--c-line);
+    font-size: 16px;
+  }
+  .cv__prices > div {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 16px;
+    padding: 20px 0;
+    border-bottom: 1px solid var(--c-line);
+  }
+  .cv__prices dd {
+    margin: 0;
+    font-family: var(--f-serif);
+    font-size: 22px;
+    color: var(--c-primary);
+    text-align: right;
+  }
+  .cv__small {
+    margin-top: 22px;
+    font-size: 14px;
+    line-height: 1.6;
+    color: var(--c-muted);
+  }
+  @media (max-width: 1023px) {
+    .cv--both {
+      grid-template-columns: 1fr;
+      gap: var(--section-gap);
+    }
+  }
+  @media (max-width: 899px) {
+    .cv__grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+    .cv__title {
+      margin-top: 16px;
+    }
+  }
+</style>

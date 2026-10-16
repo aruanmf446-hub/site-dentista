@@ -1,0 +1,94 @@
+---
+/**
+ * Contato sempre acessível:
+ * - desktop: botão flutuante de WhatsApp (canto inferior direito);
+ * - mobile: barra fixa inferior com WhatsApp + Agendar (troca por "Ligar"
+ *   quando o formulário de agendamento está na tela, como no artboard).
+ * O body recebe padding-bottom igual à barra (tokens.css), então ela não
+ * encobre conteúdo.
+ */
+import site from '@/lib/site';
+import Icon from '@/components/ui/Icon.astro';
+import WaLink from '@/components/ui/WaLink.astro';
+const tel = site.telefone ? `tel:${site.telefone.replace(/[^\d+]/g, '')}` : null;
+---
+
+<WaLink class="btn btn--float wa-float" data-wa-float>
+  <Icon name="whatsapp" size={22} />
+  WhatsApp
+</WaLink>
+
+<div class="mbar" data-mobile-bar>
+  <WaLink class="btn btn--primary mbar__wa">
+    <Icon name="whatsapp" size={20} />
+    WhatsApp
+  </WaLink>
+  <a href="/#agendamento" class="btn btn--outline mbar__alt" data-mbar-agendar>Agendar</a>
+  {
+    tel && (
+      <a href={tel} class="btn btn--outline mbar__alt" data-mbar-ligar hidden>
+        <Icon name="phone" size={18} />
+        Ligar
+      </a>
+    )
+  }
+</div>
+
+<style>
+  .wa-float {
+    position: fixed;
+    right: 32px;
+    bottom: 30px;
+    z-index: 45;
+    transition:
+      background-color 0.35s var(--ease-out),
+      color 0.35s var(--ease-out),
+      border-color 0.35s,
+      transform 0.35s var(--ease-out),
+      box-shadow 0.35s;
+  }
+  :global(.wa-float.on-dark) {
+    background: var(--c-on-primary);
+    border-color: transparent;
+    box-shadow: none;
+  }
+  .mbar {
+    display: none;
+  }
+  @media (max-width: 899px) {
+    .wa-float {
+      display: none;
+    }
+    .mbar {
+      position: fixed;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      z-index: 50;
+      display: flex;
+      gap: 10px;
+      padding: 12px 16px calc(14px + env(safe-area-inset-bottom, 0px));
+      background: color-mix(in srgb, var(--c-bg) 96%, transparent);
+      border-top: 1px solid var(--c-line);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+    }
+    .mbar :global(.btn) {
+      height: 52px;
+      font-size: 15px;
+    }
+    .mbar__wa {
+      flex: 1.3;
+      font-weight: 600;
+      gap: 8px;
+    }
+    .mbar__alt {
+      flex: 1;
+      background: var(--c-surface);
+      gap: 8px;
+    }
+    .mbar__alt[hidden] {
+      display: none;
+    }
+  }
+</style>

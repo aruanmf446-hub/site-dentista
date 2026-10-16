@@ -1,0 +1,33 @@
+---
+/**
+ * Link de WhatsApp com três comportamentos, decididos pela configuração:
+ * 1. número real → abre wa.me com mensagem pré-preenchida;
+ * 2. várias unidades sem número central → abre o seletor de unidade;
+ * 3. número placeholder (demonstração) → abre o aviso de demonstração.
+ * Sem JavaScript, os casos 2 e 3 levam à seção de agendamento.
+ */
+import type { HTMLAttributes } from 'astro/types';
+import site from '@/lib/site';
+import { waUrl } from '@/lib/whatsapp';
+
+interface Props extends Omit<HTMLAttributes<'a'>, 'class' | 'href'> {
+  unidade?: string | undefined;
+  mensagem?: string;
+  class?: string;
+}
+const { unidade, mensagem, class: cls, ...rest } = Astro.props;
+const alvo = unidade ? site.whatsappUnidades[unidade] : site.whatsappPrincipal;
+if (!alvo) throw new Error(`Unidade "${unidade}" sem destino de WhatsApp`);
+const texto = mensagem ?? site.c.contato.mensagemPadrao;
+
+let attrs: Record<string, string> = {};
+if (alvo.numero) {
+  attrs = { href: waUrl(alvo.numero, texto), target: '_blank', rel: 'noopener', 'data-wa': 'direct' };
+} else if (!unidade && site.precisaEscolherUnidade) {
+  attrs = { href: '/#agendamento', 'data-wa': 'choose', 'aria-haspopup': 'dialog' };
+} else {
+  attrs = { href: '/#agendamento', 'data-wa': 'demo', 'data-wa-unidade': alvo.rotulo, 'aria-haspopup': 'dialog' };
+}
+---
+
+<a class={cls} {...attrs} data-wa-text={texto} {...rest}><slot />{alvo.numero && <span class="sr-only"> (abre o WhatsApp em nova aba)</span>}</a>

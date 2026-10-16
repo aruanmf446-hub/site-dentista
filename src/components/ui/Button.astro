@@ -1,0 +1,31 @@
+---
+/** Botão/link em pílula — variações usadas nos artboards. */
+import type { HTMLAttributes } from 'astro/types';
+
+type Variant = 'primary' | 'outline' | 'light' | 'dark' | 'ghost-light' | 'float';
+type Size = 'sm' | 'md' | 'lg' | 'xl';
+
+interface Props extends Omit<HTMLAttributes<'a'>, 'class'> {
+  href?: string;
+  variant?: Variant;
+  size?: Size;
+  type?: 'button' | 'submit';
+  class?: string;
+  block?: boolean;
+}
+const { href, variant = 'primary', size = 'md', type = 'button', class: cls, block = false, ...rest } = Astro.props;
+const classes = ['btn', `btn--${variant}`, `btn--${size}`, { 'btn--block': block }, cls];
+---
+
+{
+  href ? (
+    <a href={href} class:list={classes} {...rest}>
+      <slot />
+    </a>
+  ) : (
+    <button type={type} class:list={classes} {...(rest as HTMLAttributes<'button'>)}>
+      <slot />
+    </button>
+  )
+}
+

@@ -1,0 +1,94 @@
+---
+/**
+ * Home: sequência cinematográfica + seções de conteúdo na ordem da
+ * configuração (`ordem`) + agendamento. Seções desligadas não são
+ * renderizadas e somem do menu, do índice de progresso e da cena 3D.
+ */
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import Cinema from '@/components/cinema/Cinema.astro';
+import Sobre from '@/components/sections/Sobre.astro';
+import Equipe from '@/components/sections/Equipe.astro';
+import Unidades from '@/components/sections/Unidades.astro';
+import ConveniosValores from '@/components/sections/ConveniosValores.astro';
+import Depoimentos from '@/components/sections/Depoimentos.astro';
+import Galeria from '@/components/sections/Galeria.astro';
+import Faq from '@/components/sections/Faq.astro';
+import Agendamento from '@/components/sections/Agendamento.astro';
+import site from '@/lib/site';
+import type { SecaoId } from '@/config/clinic.schema';
+
+const { conteudo, numeroDe } = site;
+const clinica = numeroDe('clinica');
+
+// Agrupa convênios e valores quando aparecem em sequência (mesma faixa no design).
+type Bloco = { tipo: SecaoId; junto?: SecaoId };
+const blocos: Bloco[] = [];
+for (let i = 0; i < conteudo.length; i++) {
+  const id = conteudo[i]!;
+  const prox = conteudo[i + 1];
+  if ((id === 'convenios' && prox === 'valores') || (id === 'valores' && prox === 'convenios')) {
+    blocos.push({ tipo: 'convenios', junto: 'valores' });
+    i++;
+  } else blocos.push({ tipo: id });
+}
+---
+
+<BaseLayout path="/" home>
+  <Cinema />
+  {
+    blocos.length > 0 && (
+      <div class="content" data-chapter-start="clinica">
+        {blocos.map((b, i) => {
+          const numero = i === 0 ? clinica : undefined;
+          if (b.tipo === 'depoimentos') return <div class="content__full"><Depoimentos /></div>;
+          return (
+            <div class="content__block container" data-block={b.tipo}>
+              {b.tipo === 'sobre' && <Sobre numero={numero} />}
+              {b.tipo === 'equipe' && <Equipe numero={numero} />}
+              {b.tipo === 'unidades' && <Unidades numero={numero} />}
+              {b.tipo === 'galeria' && <Galeria numero={numero} />}
+              {b.tipo === 'faq' && <Faq numero={numero} />}
+              {b.tipo === 'convenios' && <ConveniosValores convenios={b.junto ? true : true} valores={!!b.junto} numero={numero} />}
+              {b.tipo === 'valores' && <ConveniosValores convenios={false} valores numero={numero} />}
+            </div>
+          );
+        })}
+      </div>
+    )
+  }
+  <Agendamento numero={numeroDe('agendamento')} />
+</BaseLayout>
+
+<style>
+  .content {
+    position: relative;
+    z-index: 2;
+    background: var(--c-bg);
+    padding-top: clamp(120px, 11.8vw, 170px);
+  }
+  .content__block + .content__block,
+  .content__full + .content__block {
+    margin-top: var(--section-gap);
+  }
+  .content__block:has(+ .content__full) {
+    margin-bottom: var(--section-gap);
+  }
+  .content__full {
+    margin-top: var(--section-gap);
+  }
+  .content__block:first-child + .content__full,
+  .content__full:first-child {
+    margin-top: 0;
+  }
+  .container {
+    padding-right: var(--gutter-r);
+  }
+  @media (max-width: 899px) {
+    .content {
+      padding-top: 72px;
+    }
+    .container {
+      padding-right: var(--gutter);
+    }
+  }
+</style>

@@ -1,0 +1,235 @@
+---
+/** 04 · Agendamento — artboards Agendar (desktop) e MobileAgendar. */
+import site, { enderecoLinha } from '@/lib/site';
+import Eyebrow from '@/components/ui/Eyebrow.astro';
+import Title from '@/components/ui/Title.astro';
+import Icon from '@/components/ui/Icon.astro';
+import WaLink from '@/components/ui/WaLink.astro';
+import BookingForm from '@/components/forms/BookingForm.astro';
+import ToothSvg from '@/components/cinema/svg/ToothSvg.astro';
+interface Props {
+  numero?: string | undefined;
+  tratamento?: string;
+  idPrefix?: string;
+}
+const { numero, tratamento, idPrefix = 'ag' } = Astro.props;
+const { c } = site;
+const principal = c.unidades[0]!;
+const horarios = principal.horarios.map((h) => `${h.dias} ${h.horas}`).join(' · ');
+---
+
+<section id="agendamento" class="ag" aria-labelledby={`${idPrefix}-title`} data-section="agendamento">
+  <div class="ag__inner">
+    <div class="ag__copy">
+      <Eyebrow numero={numero} texto="Agendamento" />
+      <Title id={`${idPrefix}-title`} class="ag__title" text={c.agendamento.titulo} data-reveal="title" />
+      <p class="ag__text">{c.agendamento.texto}</p>
+      <WaLink class="ag__cta" mensagem={tratamento ? `Olá! Gostaria de agendar uma avaliação para ${tratamento}.` : undefined}>
+        <span><Icon name="whatsapp" size={22} />Agendar pelo WhatsApp</span>
+        <Icon name="arrow-right" class="icon-shift" />
+      </WaLink>
+      <dl class="ag__info" data-reveal="info">
+        {
+          c.contato.telefone && (
+            <div>
+              <dt>Telefone</dt>
+              <dd>{site.telefone ? <a href={`tel:${site.telefone.replace(/[^\d+]/g, '')}`}>{site.telefone}</a> : c.contato.telefone}</dd>
+            </div>
+          )
+        }
+        {
+          c.contato.email && (
+            <div>
+              <dt>E-mail</dt>
+              <dd>{c.contato.email.includes('[') ? c.contato.email : <a href={`mailto:${c.contato.email}`}>{c.contato.email}</a>}</dd>
+            </div>
+          )
+        }
+        <div>
+          <dt>{site.multiUnidade ? 'Unidade principal' : 'Endereço'}</dt>
+          <dd>{enderecoLinha(principal)}</dd>
+        </div>
+        {
+          horarios && (
+            <div>
+              <dt>Horários</dt>
+              <dd>{horarios}</dd>
+            </div>
+          )
+        }
+      </dl>
+    </div>
+
+    <div class="ag__visual">
+      <span class="ag__outline" aria-hidden="true" data-reveal="outline"></span>
+      <div class="ag__arch on-primary" data-surface="dark">
+        <div class="ag__tooth" aria-hidden="true">
+          <ToothSvg id={`${idPrefix}-tooth`} class="ag__tooth-svg" />
+        </div>
+        <BookingForm id={`${idPrefix}-form`} tratamento={tratamento} />
+      </div>
+    </div>
+  </div>
+</section>
+
+<style>
+  .ag__inner {
+    max-width: var(--max);
+    margin-inline: auto;
+    padding: clamp(120px, 10vw, 168px) var(--gutter) clamp(72px, 6vw, 96px);
+    display: grid;
+    grid-template-columns: minmax(0, 560px) minmax(0, 580px);
+    justify-content: space-between;
+    gap: 48px;
+  }
+  .ag__title {
+    margin-top: 26px;
+    font-family: var(--f-serif);
+    font-size: var(--fs-display);
+    line-height: 0.98;
+    letter-spacing: -0.015em;
+  }
+  .ag__text {
+    margin-top: 26px;
+    max-width: 440px;
+    font-size: 17px;
+    line-height: 1.6;
+    color: var(--c-text);
+  }
+  .ag__cta {
+    margin-top: 32px;
+    width: min(330px, 100%);
+    height: 62px;
+    padding: 0 26px;
+    border-radius: var(--r-pill);
+    background: var(--c-primary);
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 16px;
+    font-weight: 500;
+    text-decoration: none;
+    transition: background-color 0.25s;
+  }
+  .ag__cta:hover {
+    background: var(--c-primary-hover);
+    color: #fff;
+  }
+  .ag__cta > span {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .ag__cta:hover :global(.icon-shift) {
+    transform: translateX(3px);
+  }
+  .ag__info {
+    margin-top: 48px;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 26px 40px;
+    font-size: 15px;
+  }
+  .ag__info dt {
+    font-size: 11px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--c-muted);
+  }
+  .ag__info dd {
+    margin: 6px 0 0;
+  }
+  .ag__info a {
+    color: var(--c-ink);
+  }
+  .ag__visual {
+    position: relative;
+    padding: 18px 18px 0;
+  }
+  .ag__outline {
+    position: absolute;
+    inset: 0;
+    border: 1px solid var(--c-arch-line);
+    border-bottom: 0;
+    border-radius: 9999px 9999px 0 0;
+  }
+  .ag__arch {
+    position: relative;
+    border-radius: 9999px 9999px 0 0;
+    background: var(--c-primary);
+    color: var(--c-on-primary-2);
+    padding: 236px 62px 56px;
+  }
+  .ag__tooth {
+    position: absolute;
+    left: 50%;
+    top: 40px;
+    width: 100px;
+    height: 152px;
+    transform: translateX(-50%);
+  }
+  .ag__tooth-svg {
+    position: absolute;
+    inset: 0;
+  }
+  .ag__tooth-svg :global(svg) {
+    transform: rotate(-6deg);
+  }
+  @media (max-width: 1239px) {
+    .ag__inner {
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    }
+    .ag__arch {
+      padding-inline: 40px;
+    }
+  }
+  @media (max-width: 899px) {
+    .ag__inner {
+      padding: 64px 20px 56px;
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+    }
+    .ag__title {
+      margin-top: 14px;
+      font-size: 40px;
+      line-height: 1;
+    }
+    .ag__text {
+      margin-top: 14px;
+      font-size: 15px;
+    }
+    .ag__cta,
+    .ag__outline,
+    .ag__tooth {
+      display: none;
+    }
+    .ag__visual {
+      order: 0;
+      padding: 0;
+      margin-top: 24px;
+    }
+    .ag__arch {
+      background: transparent;
+      color: var(--c-ink);
+      padding: 0;
+      border-radius: 0;
+    }
+    .ag__info {
+      order: 1;
+      margin-top: 40px;
+      grid-template-columns: 1fr;
+      gap: 18px;
+    }
+    .ag__copy {
+      display: contents;
+    }
+    .ag__copy > :global(*) {
+      order: -1;
+    }
+    .ag__copy > .ag__info {
+      order: 1;
+    }
+  }
+</style>

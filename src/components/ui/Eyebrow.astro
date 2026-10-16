@@ -1,0 +1,56 @@
+---
+/** Rótulo de seção do design: filete + texto em versalete ("— 03 · A clínica"). */
+import site from '@/lib/site';
+
+interface Props {
+  numero?: string | undefined;
+  texto: string;
+  modulo?: string | false;
+  tone?: 'light' | 'dark';
+  rule?: boolean;
+  class?: string;
+}
+const { numero, texto, modulo = false, tone = 'light', rule = true, class: cls } = Astro.props;
+---
+
+<div class:list={['eyebrow', `eyebrow--${tone}`, cls]} data-eyebrow>
+  {rule && <span class="eyebrow__rule" aria-hidden="true" />}
+  <span class="eyebrow__text">{numero ? `${numero} · ${texto}` : texto}</span>
+  {site.marcarModulos && modulo && <span class="module-tag">{modulo}</span>}
+</div>
+
+<style>
+  .eyebrow {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 14px;
+    font-size: var(--fs-eyebrow);
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: var(--c-muted);
+    line-height: 1.4;
+  }
+  .eyebrow__rule {
+    display: block;
+    width: 32px;
+    height: 1px;
+    background: var(--c-primary);
+    transform-origin: left center;
+  }
+  .eyebrow--dark {
+    color: var(--c-on-primary-soft);
+  }
+  .eyebrow--dark .eyebrow__rule {
+    background: var(--c-on-primary-soft);
+  }
+  @media (max-width: 899px) {
+    .eyebrow {
+      gap: 10px;
+      letter-spacing: 0.2em;
+    }
+    .eyebrow__rule {
+      width: 22px;
+    }
+  }
+</style>

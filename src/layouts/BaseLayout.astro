@@ -1,0 +1,57 @@
+---
+import '@/styles/base.css';
+import BaseHead from '@/components/layout/BaseHead.astro';
+import Header from '@/components/navigation/Header.astro';
+import Footer from '@/components/layout/Footer.astro';
+import ContactBars from '@/components/navigation/ContactBars.astro';
+import Dialogs from '@/components/navigation/Dialogs.astro';
+import ProgressNav from '@/components/navigation/ProgressNav.astro';
+import site from '@/lib/site';
+import { normalizeNumber } from '@/lib/whatsapp';
+
+interface Props {
+  title?: string | undefined;
+  description?: string | undefined;
+  path: string;
+  home?: boolean;
+  jsonLd?: Record<string, unknown>[];
+  ogType?: 'website' | 'article';
+}
+const { title, description, path, home = false, jsonLd, ogType } = Astro.props;
+const cinema = home && (site.cenaTratamentos || site.cenaEspecialidades);
+
+/** Dados mínimos para os scripts do navegador (sem a configuração inteira). */
+const clientData = {
+  demo: site.demo,
+  marca: site.c.marca.nome,
+  mensagemPadrao: site.c.contato.mensagemPadrao,
+  central: normalizeNumber(site.c.contato.whatsapp),
+  unidades: site.c.unidades.map((u) => ({
+    id: u.id,
+    nome: u.nomeCurto ?? u.nome,
+    numero: normalizeNumber(u.whatsapp) ?? normalizeNumber(site.c.contato.whatsapp),
+  })),
+};
+---
+
+<!doctype html>
+<html lang="pt-BR" data-page={home ? 'home' : 'inner'}>
+  <head>
+    <BaseHead title={title} description={description} path={path} jsonLd={jsonLd} cinema={cinema} ogType={ogType} />
+  </head>
+  <body>
+    <a class="skip-link" href="#conteudo">Pular para o conteúdo</a>
+    <Header home={home} />
+    {home && <ProgressNav />}
+    <main id="conteudo" tabindex="-1">
+      <slot />
+    </main>
+    <Footer />
+    <ContactBars />
+    <Dialogs />
+    <script type="application/json" id="site-data" set:html={JSON.stringify(clientData)} />
+    <script>
+      import '@/scripts/site';
+    </script>
+  </body>
+</html>

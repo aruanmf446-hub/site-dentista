@@ -1,0 +1,172 @@
+---
+/**
+ * Diálogos globais:
+ * - seletor de unidade antes do WhatsApp (clínicas com várias unidades e sem número central);
+ * - aviso de demonstração (quando o destino ainda é placeholder).
+ */
+import site, { enderecoLinha } from '@/lib/site';
+import Icon from '@/components/ui/Icon.astro';
+import WaLink from '@/components/ui/WaLink.astro';
+---
+
+{
+  site.precisaEscolherUnidade && (
+    <dialog class="dlg" id="dlg-unidade" aria-labelledby="dlg-unidade-t" data-dialog="unidade">
+      <div class="dlg__head">
+        <h2 id="dlg-unidade-t" class="dlg__title">
+          Escolha a <em class="destaque">unidade</em>
+        </h2>
+        <button type="button" class="dlg__close" aria-label="Fechar" data-dialog-close>
+          <Icon name="close" size={20} />
+        </button>
+      </div>
+      <p class="dlg__text">Cada unidade tem o próprio WhatsApp.</p>
+      <ul role="list" class="dlg__list">
+        {site.c.unidades.map((u) => (
+          <li>
+            <WaLink unidade={u.id} class="dlg__unit" data-unit-choice={u.id}>
+              <span>
+                <span class="dlg__unit-name">{u.nome}</span>
+                <span class="dlg__unit-addr">{enderecoLinha(u)}</span>
+              </span>
+              <Icon name="whatsapp" size={20} />
+            </WaLink>
+          </li>
+        ))}
+      </ul>
+    </dialog>
+  )
+}
+
+{
+  site.demo && (
+    <dialog class="dlg" id="dlg-demo" aria-labelledby="dlg-demo-t" data-dialog="demo">
+      <div class="dlg__head">
+        <h2 id="dlg-demo-t" class="dlg__title">
+          Demonstração do <em class="destaque">template</em>
+        </h2>
+        <button type="button" class="dlg__close" aria-label="Fechar" data-dialog-close>
+          <Icon name="close" size={20} />
+        </button>
+      </div>
+      <p class="dlg__text" data-demo-text>
+        Neste site de demonstração o número de WhatsApp ainda é um placeholder. Na clínica real,
+        este botão abre a conversa com a mensagem abaixo já preenchida.
+      </p>
+      <pre class="dlg__msg" data-demo-msg />
+      <p class="dlg__small" data-demo-dest />
+      <button type="button" class="btn btn--dark btn--lg btn--block" data-dialog-close>
+        Entendi
+      </button>
+    </dialog>
+  )
+}
+
+<style is:global>
+  .dlg {
+    width: min(520px, calc(100% - 32px));
+    max-height: calc(100% - 48px);
+    padding: 28px;
+    border: 1px solid var(--c-line);
+    border-radius: 24px;
+    background: var(--c-bg);
+    color: var(--c-ink);
+    box-shadow: 0 30px 80px -30px rgba(31, 23, 25, 0.45);
+  }
+  .dlg[open] {
+    animation: dlg-in 0.4s var(--ease-out);
+  }
+  .dlg::backdrop {
+    background: rgba(31, 23, 25, 0.38);
+  }
+  @keyframes dlg-in {
+    from {
+      opacity: 0;
+      transform: translateY(14px) scale(0.98);
+    }
+  }
+  .dlg__head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+  }
+  .dlg__title {
+    font-family: var(--f-serif);
+    font-size: 34px;
+    line-height: 1.05;
+  }
+  .dlg__close {
+    flex: none;
+    width: 44px;
+    height: 44px;
+    margin: -8px -8px 0 0;
+    border: 0;
+    border-radius: 50%;
+    background: transparent;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .dlg__close:hover {
+    background: var(--c-surface-alt);
+  }
+  .dlg__text {
+    margin-top: 10px;
+    font-size: 15px;
+    color: var(--c-text);
+  }
+  .dlg__list {
+    margin: 20px 0 0;
+    padding: 0;
+    border-top: 1px solid var(--c-line);
+  }
+  .dlg__list li {
+    border-bottom: 1px solid var(--c-line);
+  }
+  .dlg__unit {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+    padding: 16px 0;
+    min-height: 64px;
+    color: var(--c-ink);
+    text-decoration: none;
+  }
+  .dlg__unit:hover {
+    color: var(--c-primary);
+  }
+  .dlg__unit-name {
+    display: block;
+    font-family: var(--f-serif);
+    font-size: 24px;
+    line-height: 1.1;
+  }
+  .dlg__unit-addr {
+    display: block;
+    margin-top: 4px;
+    font-size: 13px;
+    color: var(--c-muted);
+  }
+  .dlg__msg {
+    margin: 18px 0 0;
+    padding: 16px 18px;
+    border-radius: 14px;
+    background: var(--c-surface);
+    border: 1px solid var(--c-line);
+    font-family: var(--f-sans);
+    font-size: 14px;
+    line-height: 1.55;
+    white-space: pre-wrap;
+    color: var(--c-ink-2);
+  }
+  .dlg__msg:empty {
+    display: none;
+  }
+  .dlg__small {
+    margin: 10px 0 20px;
+    font-size: 12px;
+    color: var(--c-muted);
+  }
+</style>

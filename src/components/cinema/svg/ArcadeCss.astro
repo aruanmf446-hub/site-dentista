@@ -1,0 +1,111 @@
+---
+/**
+ * Arcada em CSS 3D (artboard Especialidades: perspective + rotateX 42°).
+ * Fallback sem WebGL e primeira pintura da seção. O destaque de cada
+ * especialidade é aplicado por scripts/ui/especialidades.ts.
+ */
+import { layoutCss } from '@/lib/arcade';
+interface Props {
+  class?: string;
+}
+const { class: cls } = Astro.props;
+const { dentes, arco } = layoutCss();
+---
+
+<div class:list={['arcade-css', cls]} data-arcade-css data-efeito="nenhum" aria-hidden="true">
+  <div class="arcade-css__plane">
+    <span class="arcade-css__glow" />
+    <svg class="arcade-css__gum" viewBox="0 0 800 640"><path d={arco} fill="none" stroke="var(--c-gum)" stroke-width="44" stroke-linecap="round" /></svg>
+    {
+      dentes.map((d, i) => (
+        <span
+          class="arcade-css__tooth"
+          data-tooth={i}
+          style={`left:${((d.x - d.w / 2) / 8).toFixed(3)}%;top:${((d.y - d.h / 2) / 6.4).toFixed(3)}%;width:${(d.w / 8).toFixed(3)}%;height:${(d.h / 6.4).toFixed(3)}%;transform:rotate(${d.rot.toFixed(1)}deg)`}
+        >
+          <span class="arcade-css__bracket" />
+        </span>
+      ))
+    }
+    <svg class="arcade-css__wire" viewBox="0 0 800 640"><path d={arco} fill="none" stroke="var(--c-primary)" stroke-width="2.5" /></svg>
+  </div>
+</div>
+
+<style>
+  .arcade-css {
+    position: relative;
+    aspect-ratio: 800 / 640;
+    container-type: inline-size;
+  }
+  .arcade-css__plane {
+    position: absolute;
+    inset: 0;
+    transform: perspective(1500px) rotateX(42deg);
+    transform-origin: 50% 100%;
+  }
+  .arcade-css__glow {
+    position: absolute;
+    left: 8.75%;
+    top: 18.75%;
+    width: 82.5%;
+    height: 87.5%;
+    border-radius: 50%;
+    background: radial-gradient(closest-side, color-mix(in srgb, var(--c-primary) 10%, transparent), transparent);
+  }
+  .arcade-css svg {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    overflow: visible;
+  }
+  .arcade-css__gum,
+  .arcade-css__wire {
+    opacity: 0;
+    transition: opacity 0.5s var(--ease-out);
+  }
+  .arcade-css__wire {
+    pointer-events: none;
+  }
+  [data-efeito='gengiva'] .arcade-css__gum {
+    opacity: 0.85;
+  }
+  [data-efeito='aparelho'] .arcade-css__wire {
+    opacity: 1;
+  }
+  .arcade-css__tooth {
+    position: absolute;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 46% 46% 42% 42%;
+    background: radial-gradient(circle at 36% 30%, #fff 0%, #f6efec 42%, #dccac6 80%, #b3999a 100%);
+    box-shadow: 0 16px 18px -10px rgba(62, 13, 24, 0.45);
+    opacity: 0.42;
+    transition:
+      opacity 0.45s var(--ease-out),
+      box-shadow 0.45s var(--ease-out),
+      background 0.45s;
+  }
+  .arcade-css__tooth.is-hi {
+    opacity: 1;
+    box-shadow:
+      0 16px 18px -10px rgba(62, 13, 24, 0.45),
+      0 0 0 3px var(--c-primary);
+  }
+  [data-efeito='implante'] .arcade-css__tooth.is-hi {
+    background: radial-gradient(circle at 36% 30%, #fff 0%, #f3e3da 40%, #d8bfaf 80%, #b39383 100%);
+  }
+  .arcade-css__bracket {
+    display: block;
+    width: 10px;
+    height: 8px;
+    border-radius: 2px;
+    background: var(--c-primary);
+    opacity: 0;
+    transition: opacity 0.4s;
+  }
+  [data-efeito='aparelho'] .arcade-css__bracket {
+    opacity: 1;
+  }
+</style>

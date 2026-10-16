@@ -1,0 +1,125 @@
+---
+/**
+ * Dente em corte longitudinal com o esmalte erguido (quadros B/C do
+ * storyboard). Fallback estático da cena de tratamentos.
+ */
+interface Props {
+  id: string;
+  class?: string;
+  /** deslocamento do esmalte em unidades do SVG (B = 55, C = 130) */
+  lift?: number;
+  tilt?: number;
+}
+const { id, class: cls, lift = 130, tilt = -8 } = Astro.props;
+const u = (s: string) => `url(#${id}-${s})`;
+const r = (s: string) => `#${id}-${s}`;
+---
+
+<div class:list={['tooth-cut', cls]} aria-hidden="true">
+  <span class="tooth-cut__shadow" />
+  <svg viewBox="0 -140 400 700" preserveAspectRatio="xMidYMid meet">
+    <defs>
+      <path id={`${id}-P`} d="M70 150 C60 90 110 60 150 80 C175 92 185 70 200 68 C215 70 225 92 250 80 C290 60 340 90 330 150 C325 200 320 240 312 270 C305 330 300 400 280 470 C272 495 245 495 240 465 C232 410 222 350 200 340 C178 350 168 410 160 465 C155 495 128 495 120 470 C100 400 95 330 88 270 C80 240 75 200 70 150 Z" />
+      <path id={`${id}-E`} d="M83 250 C76 210 72 180 70 150 C60 90 110 60 150 80 C175 92 185 70 200 68 C215 70 225 92 250 80 C290 60 340 90 330 150 C327 185 322 220 317 250 C280 268 120 268 83 250 Z" />
+      <path id={`${id}-D`} d="M83 165 C74 111 119 84 155 102 C177.5 112.8 186.5 93 200 91.2 C213.5 93 222.5 112.8 245 102 C281 84 326 111 317 165 C312.5 210 308 246 300.8 273 C294.5 327 290 390 272 453 C264.8 475.5 240.5 475.5 236 448.5 C228.8 399 219.8 345 200 336 C180.2 345 171.2 399 164 448.5 C159.5 475.5 135.2 475.5 128 453 C110 390 105.5 327 99.2 273 C92 246 87.5 210 83 165 Z" />
+      <path id={`${id}-Q`} d="M150 190 C148 165 158 150 165 160 C175 172 188 176 200 175 C212 176 225 172 235 160 C242 150 252 165 250 190 C255 225 245 250 238 262 C236 330 248 400 252 440 L246 442 C236 400 222 330 214 290 C205 284 195 284 186 290 C178 330 164 400 154 442 L148 440 C152 400 164 330 162 262 C155 250 145 225 150 190 Z" />
+      <clipPath id={`${id}-cL`}><rect x="-60" y="-220" width="260" height="900" /></clipPath>
+      <clipPath id={`${id}-cR`}><rect x="200" y="-220" width="300" height="900" /></clipPath>
+      <clipPath id={`${id}-cRoot`}><rect x="-60" y="248" width="520" height="400" /></clipPath>
+      <clipPath id={`${id}-cCrown`}><rect x="-60" y="-220" width="520" height="472" /></clipPath>
+      <mask id={`${id}-mShell`} maskUnits="userSpaceOnUse" x="-60" y="-220" width="520" height="900">
+        <use href={r('E')} fill="#FFFFFF" />
+        <use href={r('D')} fill="#000000" />
+      </mask>
+      <radialGradient id={`${id}-gEn`} cx="0.36" cy="0.24" r="0.85">
+        <stop offset="0" stop-color="#FFFFFF" />
+        <stop offset="0.28" stop-color="#F7F4F2" />
+        <stop offset="0.58" stop-color="#E4DCD8" />
+        <stop offset="0.85" stop-color="#B9A8A8" />
+        <stop offset="1" stop-color="#8E7376" />
+      </radialGradient>
+      <linearGradient id={`${id}-gRoot`} x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0" stop-color="#EFE2CF" />
+        <stop offset="0.5" stop-color="#DCC6AA" />
+        <stop offset="1" stop-color="#BFA084" />
+      </linearGradient>
+      <linearGradient id={`${id}-gVol`} x1="0" y1="0" x2="1" y2="0">
+        <stop offset="0" stop-color="#2A0710" stop-opacity="0.34" />
+        <stop offset="0.22" stop-color="#2A0710" stop-opacity="0" />
+        <stop offset="0.6" stop-color="#3A0A16" stop-opacity="0" />
+        <stop offset="1" stop-color="#3A0A16" stop-opacity="0.52" />
+      </linearGradient>
+      <linearGradient id={`${id}-gVolSoft`} x1="0" y1="0" x2="1" y2="0">
+        <stop offset="0" stop-color="#2A0710" stop-opacity="0.16" />
+        <stop offset="0.25" stop-color="#2A0710" stop-opacity="0" />
+        <stop offset="0.62" stop-color="#3A0A16" stop-opacity="0" />
+        <stop offset="1" stop-color="#3A0A16" stop-opacity="0.3" />
+      </linearGradient>
+      <linearGradient id={`${id}-gDen`} x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0" stop-color="#F4E8D8" />
+        <stop offset="1" stop-color="#D9C0A2" />
+      </linearGradient>
+      <linearGradient id={`${id}-gFace`} x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0" stop-color="#F5EBDF" />
+        <stop offset="1" stop-color="#DECAB1" />
+      </linearGradient>
+      <linearGradient id={`${id}-gEnFace`} x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0" stop-color="#FFFFFF" />
+        <stop offset="1" stop-color="#E7E0DA" />
+      </linearGradient>
+      <radialGradient id={`${id}-gPulp`} cx="0.5" cy="0.25" r="0.85">
+        <stop offset="0" stop-color="#F0A6AF" />
+        <stop offset="0.5" stop-color="#C45F6F" />
+        <stop offset="1" stop-color="#8E3346" />
+      </radialGradient>
+      <filter id={`${id}-f2`} x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="2.2" /></filter>
+      <filter id={`${id}-f6`} x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="6" /></filter>
+    </defs>
+    <g clip-path={u('cR')}><g transform="translate(8 4)"><g clip-path={u('cRoot')}><use href={r('P')} fill="#A88A76" /></g><g clip-path={u('cCrown')}><use href={r('D')} fill="#A88A76" /></g></g></g>
+    <g clip-path={u('cL')}>
+      <g clip-path={u('cRoot')}><use href={r('P')} fill={u('gRoot')} /><use href={r('P')} fill={u('gVol')} /></g>
+      <g clip-path={u('cCrown')}><use href={r('D')} fill={u('gDen')} /><use href={r('D')} fill={u('gVol')} /></g>
+      <ellipse cx="128" cy="300" rx="7" ry="60" fill="#FFF8EE" opacity="0.4" filter={u('f6')} />
+    </g>
+    <g clip-path={u('cR')}>
+      <g clip-path={u('cRoot')}><use href={r('P')} fill={u('gFace')} /><use href={r('P')} fill="none" stroke="#A3836C" stroke-opacity="0.5" stroke-width="2" /></g>
+      <g clip-path={u('cCrown')}><use href={r('D')} fill={u('gFace')} /></g>
+      <use href={r('Q')} fill="#E58C99" opacity="0.55" filter={u('f6')} />
+      <use href={r('Q')} fill={u('gPulp')} />
+    </g>
+    <path d="M200 92 L200 338" stroke="#FFFFFF" stroke-opacity="0.6" stroke-width="1.2" />
+    <ellipse cx="200" cy="100" rx="100" ry="10" fill="#2A0710" opacity="0.12" filter={u('f6')} />
+    <g transform={`translate(0 ${-lift}) rotate(${tilt} 200 160)`}>
+      <g clip-path={u('cR')}><g transform="translate(7 3)"><g mask={u('mShell')}><use href={r('E')} fill="#C9BBB3" /></g></g></g>
+      <g clip-path={u('cL')}>
+        <use href={r('E')} fill={u('gEn')} />
+        <use href={r('E')} fill={u('gVolSoft')} />
+        <ellipse cx="132" cy="152" rx="16" ry="40" fill="#FFFFFF" opacity="0.75" filter={u('f6')} />
+        <ellipse cx="148" cy="90" rx="20" ry="7" fill="#FFFFFF" opacity="0.95" filter={u('f2')} />
+      </g>
+      <g clip-path={u('cR')}><g mask={u('mShell')}><use href={r('E')} fill={u('gEnFace')} /></g></g>
+    </g>
+  </svg>
+</div>
+
+<style>
+  .tooth-cut {
+    position: relative;
+  }
+  .tooth-cut svg {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+  }
+  .tooth-cut__shadow {
+    position: absolute;
+    left: 18%;
+    top: 89%;
+    width: 64%;
+    height: 4.3%;
+    border-radius: 50%;
+    background: var(--c-primary-dark);
+    filter: blur(10px);
+  }
+</style>

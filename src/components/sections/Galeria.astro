@@ -1,0 +1,84 @@
+---
+/**
+ * Galeria (não desenhada no artboard; derivada da linguagem do design):
+ * fotos reais em arcos de alturas alternadas, rolagem horizontal no mobile.
+ */
+import site from '@/lib/site';
+import Eyebrow from '@/components/ui/Eyebrow.astro';
+import Title from '@/components/ui/Title.astro';
+import ArchPhoto from '@/components/ui/ArchPhoto.astro';
+interface Props {
+  numero?: string | undefined;
+}
+const { numero } = Astro.props;
+const { galeria } = site.c;
+---
+
+<section id="galeria" class="gal" aria-labelledby="gal-title" data-section="galeria">
+  <Eyebrow numero={numero} texto="Galeria" modulo="Módulo opcional" />
+  <Title id="gal-title" class="gal__title" text={galeria.titulo} data-reveal="title" />
+  <ul role="list" class="gal__list" style={`--n:${galeria.fotos.length}`} tabindex="0" aria-label="Fotos da clínica">
+    {
+      galeria.fotos.map((f, i) => (
+        <li class="gal__item" style={`--i:${i}`}>
+          <figure>
+            <ArchPhoto foto={f} class="gal__arch" sizes="(max-width: 899px) 70vw, 30vw" />
+            {f.legenda && <figcaption>{f.legenda}</figcaption>}
+          </figure>
+        </li>
+      ))
+    }
+  </ul>
+</section>
+
+<style>
+  .gal__title {
+    margin-top: 22px;
+    font-family: var(--f-serif);
+    font-size: clamp(2.25rem, 1.65rem + 1.45vw, 3.375rem);
+    line-height: 1.02;
+  }
+  .gal__list {
+    margin: 48px 0 0;
+    padding: 0;
+    display: grid;
+    grid-template-columns: repeat(min(var(--n), 4), minmax(0, 1fr));
+    gap: 32px;
+    align-items: end;
+  }
+  .gal__list:focus-visible {
+    outline-offset: 8px;
+  }
+  .gal__item figure {
+    margin: 0;
+  }
+  .gal__arch {
+    aspect-ratio: 3 / 4;
+  }
+  .gal__item:nth-child(even) .gal__arch {
+    aspect-ratio: 3 / 3.6;
+  }
+  .gal__item figcaption {
+    margin-top: 14px;
+    font-size: 13px;
+    color: var(--c-muted);
+  }
+  @media (max-width: 899px) {
+    .gal__title {
+      margin-top: 16px;
+    }
+    .gal__list {
+      display: flex;
+      gap: 16px;
+      overflow-x: auto;
+      scroll-snap-type: x mandatory;
+      margin-inline: calc(-1 * var(--gutter));
+      padding: 0 var(--gutter) 8px;
+      scrollbar-width: none;
+    }
+    .gal__item {
+      flex: 0 0 68%;
+      scroll-snap-align: start;
+    }
+  }
+</style>

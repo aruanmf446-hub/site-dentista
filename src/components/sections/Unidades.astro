@@ -1,0 +1,164 @@
+---
+/**
+ * Unidades (filiais). Com uma unidade só, vira "Onde estamos", sem textos no
+ * plural nem seletores. Cada unidade tem WhatsApp próprio e rota opcional.
+ */
+import site, { enderecoLinha } from '@/lib/site';
+import Eyebrow from '@/components/ui/Eyebrow.astro';
+import Title from '@/components/ui/Title.astro';
+import Icon from '@/components/ui/Icon.astro';
+import WaLink from '@/components/ui/WaLink.astro';
+import ArchPhoto from '@/components/ui/ArchPhoto.astro';
+interface Props {
+  numero?: string | undefined;
+}
+const { numero } = Astro.props;
+const { c, multiUnidade } = site;
+const titulo = multiUnidade ? c.unidadesSecao.tituloVarias : c.unidadesSecao.tituloUnica;
+---
+
+<section id="unidades" class="unid" aria-labelledby="unid-title" data-section="unidades">
+  <Eyebrow numero={numero} texto={multiUnidade ? 'Unidades' : 'Onde estamos'} modulo={multiUnidade ? 'Módulo opcional · filiais' : 'Unidade única'} />
+  <Title id="unid-title" class="unid__title" text={titulo} data-reveal="title" />
+  <ul role="list" class="unid__list" data-reveal="rows">
+    {
+      c.unidades.map((u) => (
+        <li class="unid__row">
+          <ArchPhoto foto={u.fotos[0]} class="unid__photo" sizes="110px" widths={[220, 330]} />
+          <div class="unid__main">
+            <h3 class="unid__name">
+              {multiUnidade ? <a href={`/unidades/${u.id}/`}>{u.nome}</a> : u.nome}
+            </h3>
+            <p class="unid__addr">{enderecoLinha(u)}</p>
+          </div>
+          <p class="unid__hours">
+            {u.horarios.map((h, i) => (
+              <>
+                {i > 0 && <br />}
+                {h.dias} · {h.horas}
+              </>
+            ))}
+            {u.observacao && (
+              <>
+                <br />
+                {u.observacao}
+              </>
+            )}
+          </p>
+          <div class="unid__actions">
+            {u.mapa && (
+              <a href={u.mapa} class="btn btn--outline unid__btn" target="_blank" rel="noopener">
+                <Icon name="pin" size={16} />
+                Como chegar<span class="sr-only"> à {u.nome} (abre em nova aba)</span>
+              </a>
+            )}
+            <WaLink unidade={u.id} class="btn btn--primary unid__btn" aria-label={`WhatsApp da ${u.nome}`}>
+              <Icon name="whatsapp" />
+              {multiUnidade ? 'WhatsApp da unidade' : 'WhatsApp'}
+            </WaLink>
+          </div>
+        </li>
+      ))
+    }
+  </ul>
+</section>
+
+<style>
+  .unid__title {
+    margin-top: 22px;
+    font-family: var(--f-serif);
+    font-size: clamp(2.25rem, 1.65rem + 1.45vw, 3.375rem);
+    line-height: 1.02;
+  }
+  .unid__list {
+    margin: 44px 0 0;
+    padding: 0;
+    border-top: 1px solid var(--c-line);
+  }
+  .unid__row {
+    display: grid;
+    grid-template-columns: 110px minmax(0, 1.3fr) minmax(0, 1fr) auto;
+    gap: 40px;
+    align-items: center;
+    padding: 26px 0;
+    border-bottom: 1px solid var(--c-line);
+  }
+  .unid__photo {
+    height: 136px;
+  }
+  .unid__name {
+    font-family: var(--f-serif);
+    font-size: 32px;
+    line-height: 1.1;
+  }
+  .unid__name a {
+    color: inherit;
+    text-decoration: none;
+  }
+  .unid__name a:hover {
+    color: var(--c-primary);
+  }
+  .unid__addr {
+    margin-top: 6px;
+    font-size: 15px;
+    color: var(--c-text);
+  }
+  .unid__hours {
+    font-size: 14px;
+    line-height: 1.7;
+    color: var(--c-text);
+  }
+  .unid__actions {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+  }
+  .unid__btn {
+    height: 46px;
+    padding: 0 18px;
+    gap: 8px;
+  }
+  @media (max-width: 1239px) {
+    .unid__row {
+      grid-template-columns: 90px minmax(0, 1fr) minmax(0, 0.8fr);
+      gap: 24px 32px;
+    }
+    .unid__photo {
+      height: 112px;
+    }
+    .unid__actions {
+      grid-column: 2 / -1;
+      justify-content: flex-start;
+    }
+  }
+  @media (max-width: 899px) {
+    .unid__title {
+      margin-top: 16px;
+    }
+    .unid__list {
+      margin-top: 32px;
+    }
+    .unid__row {
+      grid-template-columns: 72px minmax(0, 1fr);
+      gap: 14px 18px;
+      align-items: start;
+    }
+    .unid__photo {
+      height: 92px;
+      grid-row: span 2;
+    }
+    .unid__name {
+      font-size: 26px;
+    }
+    .unid__hours {
+      grid-column: 2;
+    }
+    .unid__actions {
+      grid-column: 1 / -1;
+    }
+    .unid__actions :global(.btn) {
+      flex: 1;
+    }
+  }
+</style>

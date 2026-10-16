@@ -1,0 +1,119 @@
+---
+/**
+ * Agendamento rápido do hero (Unidade · Motivo · Período). Não exibe
+ * horários disponíveis: abre o WhatsApp da unidade com a solicitação.
+ */
+import site from '@/lib/site';
+const { c, multiUnidade } = site;
+---
+
+<div class="quick" data-form-wrap>
+  <form class="quick__form" aria-label="Agendamento rápido" data-wa-form="quick">
+    {
+      multiUnidade && (
+        <>
+          <label class="quick__field" data-field="unidade">
+            <span>Unidade</span>
+            <select name="unidade" required>
+              {c.unidades.map((u) => <option value={u.id}>{u.nomeCurto ?? u.nome}</option>)}
+            </select>
+          </label>
+          <span class="quick__sep" aria-hidden="true" />
+        </>
+      )
+    }
+    <label class="quick__field quick__field--wide">
+      <span>Motivo</span>
+      <select name="motivo">
+        {c.agendamento.motivos.map((m) => <option>{m}</option>)}
+      </select>
+    </label>
+    <span class="quick__sep" aria-hidden="true" />
+    <label class="quick__field">
+      <span>Período</span>
+      <select name="periodo">
+        {c.agendamento.periodos.map((p) => <option>{p}</option>)}
+      </select>
+    </label>
+    <button type="submit" class="quick__submit">Solicitar horário</button>
+  </form>
+  <p class="quick__status" data-form-status role="status" aria-live="polite"></p>
+</div>
+
+<style>
+  .quick__form {
+    height: 76px;
+    width: min(660px, 100%);
+    padding: 0 10px 0 26px;
+    display: flex;
+    align-items: center;
+    gap: 22px;
+    background: var(--c-surface);
+    border: 1px solid var(--c-line);
+    border-radius: 18px;
+  }
+  .quick__field {
+    position: relative;
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    font-size: 11px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--c-muted);
+    line-height: 1.2;
+  }
+  .quick__field--wide {
+    flex: 1.3;
+  }
+  .quick__field select {
+    appearance: none;
+    border: 0;
+    background: transparent
+      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%236E6063' stroke-width='2' stroke-linecap='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E")
+      right 0 center / 12px no-repeat;
+    padding: 0 16px 0 0;
+    font-size: 15px;
+    letter-spacing: 0;
+    text-transform: none;
+    color: var(--c-ink);
+    min-height: 24px;
+    cursor: pointer;
+    text-overflow: ellipsis;
+  }
+  .quick__field select:focus-visible {
+    outline: 2px solid var(--c-primary);
+    outline-offset: 4px;
+  }
+  .quick__sep {
+    flex: none;
+    width: 1px;
+    height: 36px;
+    background: var(--c-line);
+  }
+  .quick__submit {
+    flex: none;
+    height: 56px;
+    padding: 0 22px;
+    border: 0;
+    border-radius: 12px;
+    background: var(--c-ink);
+    color: #fff;
+    font-size: 14px;
+    font-weight: 500;
+    transition: background-color 0.25s;
+  }
+  .quick__submit:hover {
+    background: var(--c-primary);
+  }
+  .quick__status {
+    min-height: 0;
+    font-size: 13px;
+    color: var(--c-muted);
+  }
+  .quick__status:not(:empty) {
+    margin-top: 8px;
+  }
+</style>

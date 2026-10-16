@@ -1,0 +1,89 @@
+---
+/**
+ * Foto em arco (topo em meio-círculo), elemento recorrente do design.
+ * Aceita imagem importada (otimizada), caminho/URL, ou placeholder "[...]"
+ * que vira o hachurado com rótulo do design.
+ */
+import { Picture } from 'astro:assets';
+import type { Foto } from '@/config/clinic.schema';
+import { isPlaceholder } from '@/lib/placeholders';
+
+interface Props {
+  foto?: Foto | undefined;
+  /** rótulo do placeholder quando não houver foto */
+  rotulo?: string;
+  /** largura de referência em px no desktop (define o raio do arco) */
+  sizes?: string;
+  widths?: number[];
+  class?: string;
+  /** posição do rótulo do placeholder */
+  labelAt?: 'center' | 'bottom';
+  eager?: boolean;
+  reveal?: boolean;
+}
+const {
+  foto,
+  rotulo,
+  sizes = '(max-width: 899px) 90vw, 340px',
+  widths = [360, 540, 720, 1080],
+  class: cls,
+  labelAt = 'center',
+  eager = false,
+  reveal = true,
+} = Astro.props;
+const src = foto?.src;
+const placeholder = !src || isPlaceholder(src);
+const label = placeholder ? (typeof src === 'string' && isPlaceholder(src) ? src : rotulo) : undefined;
+---
+
+<div class:list={['arch', cls, { 'arch--ph ph': placeholder }]} data-reveal={reveal ? 'arch' : undefined}>
+  {
+    placeholder ? (
+      label && <span class:list={['ph__label', `ph__label--${labelAt}`]}>{label}</span>
+    ) : typeof src === 'string' ? (
+      <img
+        src={src}
+        alt={foto!.alt}
+        loading={eager ? 'eager' : 'lazy'}
+        decoding="async"
+        style={foto!.posicao ? `object-position:${foto!.posicao}` : undefined}
+      />
+    ) : (
+      <Picture
+        src={src!}
+        alt={foto!.alt}
+        widths={widths}
+        sizes={sizes}
+        formats={['avif', 'webp']}
+        loading={eager ? 'eager' : 'lazy'}
+        style={foto!.posicao ? `object-position:${foto!.posicao}` : undefined}
+      />
+    )
+  }
+</div>
+
+<style>
+  .arch {
+    position: relative;
+    overflow: hidden;
+    /* raio "infinito": o navegador reduz para meia largura → arco perfeito */
+    border-radius: 9999px 9999px 0 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--c-placeholder);
+    isolation: isolate;
+  }
+  .arch :global(picture),
+  .arch :global(img) {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+  .ph__label--bottom {
+    position: absolute;
+    bottom: 20px;
+  }
+</style>
