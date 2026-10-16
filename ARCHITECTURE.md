@@ -28,8 +28,9 @@ componentes .astro  ──►  HTML estático  ──►  scripts do navegador (
 ## Modos de experiência (home)
 | Modo | Quando | Como |
 |---|---|---|
-| **cinema** | largura ≥ 900 px, WebGL, sem "reduzir movimento" | `.cinema__viewport` fica `sticky`; uma timeline GSAP dirige palco 3D, arco vinho e textos. |
-| **empilhado** | mobile, movimento reduzido, desktop estreito | Painéis viram seções comuns; um renderizador fora da tela desenha vistas 3D em `<canvas data-view>` (hero, tratamentos, especialidades). |
+| **cinema** | qualquer largura, WebGL, sem "reduzir movimento" | `.cinema__viewport` fica `sticky`; uma timeline GSAP dirige palco 3D, arco vinho e textos. Abaixo de 900 px, `html.cine-compact`: composição de celular/tablet, rolagem mais curta e 3D mais leve (ver MOTION.md). |
+| **empilhado** | movimento reduzido | Painéis viram seções comuns; um renderizador fora da tela desenha vistas 3D paradas em `<canvas data-view>` (hero, tratamentos com abas por camada, especialidades). |
+| **estático** | sem WebGL, ou falha do 3D | Painéis empilhados com os SVGs do design (`html.no-webgl`, motivo em `data-webgl-error`). |
 | **estático** | sem WebGL ou sem JS | SVGs/CSS dos artboards (`components/cinema/svg/`): dente, corte, camadas, arcada em CSS 3D. |
 
 A classe `is-cinema` é decidida por um script inline no `<head>` (sem CLS). Se o WebGL falhar

@@ -9,7 +9,7 @@ description: Corrige layout, tipografia, espaçamento, overflow, comportamento m
 - Artboards: `design/claude-design/*.dc.html` (desktop 1440 × 900; mobile 390 × 844).
 - Tokens: `src/styles/tokens.css` — escalas fluidas calculadas **de 390 a 1440 px** a partir dos tamanhos do design (ex.: `--fs-h2` 36 → 58 px). Para um novo tamanho: `slope = (max−min)/1050`, `intercept = min − slope×390`, `clamp(min, intercept + slope·100vw, max)`.
 - Margens: `--gutter` (96 px em 1440, mín. 20 px), `--gutter-r` (128 px à direita nas seções de conteúdo).
-- Pontos de quebra usados: **900 px** (modo cinema e header em pílula; abaixo, layout mobile), **1240 px** (menu completo do header), **1024 px** (convênios/valores lado a lado).
+- Pontos de quebra usados: **900 px** (header em pílula e composição do cinema; abaixo, layout mobile e cinema compacto `html.cine-compact` — a sequência 3D continua ligada à rolagem), **1240 px** (menu completo do header), **1024 px** (convênios/valores lado a lado).
 
 ## Armadilhas conhecidas (já resolvidas — não reintroduza)
 - Estilos de componente filho: o projeto usa `scopedStyleStrategy: 'class'`; componentes reutilizáveis declaram base com `:where(.classe)` para que o pai possa sobrescrever posição/forma.

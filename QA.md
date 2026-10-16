@@ -3,6 +3,46 @@
 Execução registrada em 16/10/2026, nesta branch, no ambiente de nuvem do Claude Code
 (Linux, Chromium 141 do Playwright 1.64, **WebGL por software — SwiftShader**, sem GPU).
 
+## Correção do scroll 3D (16/10/2026)
+Reproduzido no build idêntico ao publicado (mesmos arquivos com hash servidos pela Vercel no
+deploy `dpl_ADgMC8AxAfCwPs4J7ZNJen7McgNP`, commit `60c1ca9`) com `scripts/qa/probe-scroll.mjs`.
+
+| Causa reproduzida | Evidência (antes) | Correção |
+|---|---|---|
+| Abaixo de 900 px não havia sequência: `is-cinema` só ≥ 900 px; celular/tablet caíam no modo empilhado | 390 e 768 px: `experience=stacked`, sem timeline; corte e arcada nunca mudavam com a rolagem | Cinema em qualquer largura; `cine-compact` muda composição, rolagem por cena (72vh) e qualidade |
+| Desktop: o primeiro quadro compilava os shaders na thread principal | rolar no instante em que o dente aparece: resposta em 992–1113 ms, tarefas longas de 757–824 ms + 249–309 ms | O palco só desenha depois de `warmup()` (compilação assíncrona + PMREM); resposta em 9–14 ms, sem tarefas longas > 100 ms |
+| Atualizar/voltar no meio da sequência levava ao hero | `scrollY` 3600 → 0 após recarregar (o `scrollTo(0,0)` de medição do ScrollTrigger cancela a restauração do navegador) | Posição guardada em `pagehide` e devolvida após a montagem (só em recarregar/voltar) |
+| Falha do WebGL recarregava a página e gravava `alva:no-webgl`, desligando o 3D na sessão inteira | código: `sessionStorage.setItem('alva:no-webgl','1'); location.reload()` | Teste de capacidade antes de montar; falha tardia desmonta na própria página, registra `console.error` e `data-webgl-error`; nada fica gravado (a chave antiga é apagada) |
+| Desmontagem incompleta deixava a lista de tratamentos com largura 0 | `clearProps: 'all'` apagava o `style="--rows:…"` do markup | Limpa só as propriedades animadas |
+| 1024 × 768: dente do quadro B sobre as legendas; arcada sobre o título das especialidades | capturas | Âncoras próprias para 900–1239 px |
+| Barra de endereço do celular | trilha em `100vh`/`100svh` mudaria ao rolar | Palco em `vh` (viewport grande, estável) + faixa `--cine-ui-bottom`; redimensionamentos só de altura < 160 px não refazem a trilha |
+
+Medição com `probe-scroll.mjs` (mesmos pontos de rolagem, Chromium):
+
+| Perfil | Antes | Depois |
+|---|---|---|
+| desktop 1440 × 900 | cinema; corte e arcada mudam com a rolagem | idem |
+| desktop 1024 × 768 | cinema | idem |
+| tablet 768 × 1024 | empilhado: sem timeline, corte/arcada nunca aparecem | cinema compacto: corte abre, arcada forma, reverte |
+| Android 390 × 844 | empilhado: só o dente do hero gira | cinema compacto: corte abre, arcada forma, reverte |
+
+Sequências capturadas por tempo da timeline: `docs/qa/desktop-1440-sequencia.jpg`,
+`docs/qa/desktop-1024-sequencia.jpg`, `docs/qa/tablet-768-sequencia.jpg`,
+`docs/qa/mobile-390-sequencia.jpg` (hero → A → B → C → reconstrução → arcada → especialidades).
+
+**Testes desta correção:** `npx astro check` 0 erros; suíte completa **70 de 70** (9,5 min).
+Novos ou reescritos: sequência 0 → 100% → 0 em 4 perfis (1440, 1024, 768 tablet, 390 Android)
+verificando variáveis da timeline **e** objetos Three.js (grupo do corte, arcada visível, posição
+do esmalte, rotação do dente, câmera) **e** amostras de pixels lidas do canvas WebGL; toque em
+especialidade no celular; girar o aparelho (390 → 844 paisagem → 1024 → 390); atualizar no meio
+da sequência; âncoras `#especialidades`/`#tratamentos`; falha tardia do WebGL (desmontagem);
+abas por camada agora sob movimento reduzido.
+
+**Não executado:** Safari/WebKit — o download do WebKit (`cdn.playwright.dev`,
+`playwright.download.prss.microsoft.com`) é recusado pela política de rede deste ambiente; testes
+direto na URL de produção — o host `site-dentista-peach.vercel.app` também é recusado (o HTML e
+os scripts publicados foram conferidos pela integração da Vercel). Ver "Limitações".
+
 ## Como reproduzir
 ```bash
 npm ci
@@ -108,16 +148,15 @@ evento `load`; a geometria é gerada em Web Worker.
 2. **Bordas do corte do dente.** Com a resolução atual da malha (Surface Nets), as bordas do corte
    longitudinal mostram pequenos degraus quando o dente está muito ampliado (quadro B). Melhoria
    possível: resolução maior só para o corte, ou um GLB modelado (`cena3d.modeloGlb`).
-3. **Safari/Firefox não testados** — a suíte roda só em Chromium.
+3. **Safari/Firefox não testados** — a suíte roda só em Chromium (com emulação de celular). O
+   WebKit não pôde ser baixado neste ambiente (rede). O cinema compacto foi feito para o Safari
+   (sem `normalizeScroll`, palco em `vh` estável, giro ocioso a ~30 quadros/s, DPR ≤ 1,5, sem
+   MSAA), mas **precisa ser conferido num iPhone real** antes de ser dado como validado.
 4. **Diferenças visuais deliberadas** do design estão listadas em `DESIGN.md`.
 5. **Conteúdo** da demonstração é placeholder (`[Nome Sobrenome]`, `[Foto real — …]`); o build de
    produção recusa esses placeholders.
-6. **Publicação não realizada nesta sessão** (16/10/2026):
-   - `git push` → HTTP 403: o Claude GitHub App não tem acesso a `aruanmf446-hub/site-dentista`.
-     Os commits existem só localmente até o acesso ser liberado.
-   - Vercel: a conta está conectada (plano Hobby), mas o contêiner não alcança `api.vercel.com`
-     (proxy recusa) e o deploy pela integração exigiria o código no GitHub ou o envio arquivo a
-     arquivo do conteúdo. Sem o push, não houve deploy.
-   - Pronto para publicar: `vercel.json` (framework Astro, `npm run build`, saída `dist`, cache e
-     cabeçalhos de segurança); sem variáveis, o build usa a demonstração `alva-demo` (fictícia,
-     `noindex`). Nenhum domínio foi vinculado e nenhum serviço pago foi configurado.
+6. **Publicação** — o push para o GitHub foi liberado depois (acesso do app em "All
+   repositories") e a Vercel publica a `main` (projeto `site-dentista`, produção
+   `https://site-dentista-peach.vercel.app/`). Este contêiner não consegue abrir o domínio
+   `*.vercel.app` (rede); a conferência da produção é feita pela integração da Vercel (status do
+   deployment, logs, HTML e scripts servidos).

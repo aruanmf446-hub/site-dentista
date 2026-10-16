@@ -47,15 +47,39 @@ Sem `tratamentos`, o hero vai direto à arcada; sem `especialidades`, a sequênc
 - Clique na especialidade → rola até o trecho dela (`espHooks.scrollTo`).
 - Links `/#tratamentos`, `/#especialidades` → os ids passam para marcadores na trilha.
 - Foco por teclado dentro de um painel invisível → rola até o trecho em que ele aparece.
-- `prefers-reduced-motion` → modo empilhado estático (quadro C parado).
+- `prefers-reduced-motion` → modo empilhado estático (quadro C parado, abas por camada).
 
-## 2. Modo empilhado (mobile)
-`src/scripts/cinema/stacked.ts`. Vistas 3D nos `<canvas data-view>`:
-- **hero**: giro ocioso + rotação ligada à rolagem do hero.
-- **tratamentos**: abas por camada (`LAYERS`): esmalte (esmalte erguido, núcleo esmaecido),
-  dentina e polpa (corte, polpa brilhando), raiz (corte visto de baixo). Transição de 0,9 s.
-- **especialidades**: arcada; clique interpola o destaque (0,7 s).
-O 3D começa na primeira interação (ou após 5 s); até lá os SVGs do design ocupam o lugar.
+### Celular e tablet (< 900 px): a mesma sequência, compacta
+A timeline é **a mesma** do desktop. `html.cine-compact` muda só:
+
+| O quê | Desktop | Compacto |
+|---|---|---|
+| Rolagem por cena (`--cine-unit`) | 100vh | 72vh (trechos fixados mais curtos) |
+| Composição | âncoras e textos do artboard Main | hero do MobileHero; quadro A centrado no arco; B com o dente à esquerda e legendas à direita; C com o dente no canto superior direito e a lista (até 6 itens) abaixo; arcada sob o título, especialidades em 2 colunas |
+| Qualidade 3D | DPR ≤ 1,75, MSAA, geometria refinada | DPR ≤ 1,5, sem MSAA, geometria leve |
+| Giro ocioso | 60 quadros/s | ~30 quadros/s |
+| Legendas do quadro B | saem em 60% | saem em 52% (antes de o dente atravessar a tela) |
+
+A altura do palco usa `vh` (viewport grande no iOS/Android): a barra de endereço aparecendo ou
+sumindo não refaz a trilha. O conteúdo do fundo respeita a faixa coberta pelas barras do
+navegador (`--cine-ui-bottom` = `100vh − 100svh`) e a barra fixa de WhatsApp. Girar o aparelho
+ou cruzar 900 px troca a composição e recalcula a trilha sem recarregar a página.
+
+### Carregamento e falhas
+- Página e textos primeiro; o 3D começa após o `load` (ou no primeiro toque/rolagem).
+- O palco **só desenha depois de compilar os shaders** (`stage.warmup()`); até lá os SVGs do
+  design ficam no lugar. Desenhar antes travava a rolagem por ~0,8 s logo que o dente aparecia.
+- Sem WebGL (teste de capacidade) → fallback estático direto.
+- Falha tardia (contexto recusado, erro na geometria, 25 s sem a cena pronta) → a sequência é
+  desmontada na própria página (`teardown` em `cinema.ts`): ids das âncoras voltam aos painéis,
+  o layout estático aparece, o motivo vai para o console (`console.error`) e para
+  `html[data-webgl-error]`. Nada é gravado na sessão: a próxima visita tenta o 3D de novo.
+- Contexto WebGL perdido → o navegador pode devolvê-lo; o palco volta a desenhar sozinho.
+
+## 2. Modo empilhado (movimento reduzido)
+`src/scripts/cinema/stacked.ts`. Usado só com `prefers-reduced-motion`: vistas 3D paradas nos
+`<canvas data-view>` — hero, tratamentos (abas por camada `LAYERS`: esmalte, dentina e polpa,
+raiz) e especialidades (clique troca o destaque). O 3D começa na primeira interação (ou após 5 s).
 
 ## 3. Motion UI (conteúdo)
 `src/scripts/motion/reveal.ts` — ver tabela na skill `motion-ui` (`.claude/skills/motion-ui/SKILL.md`):
