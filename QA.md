@@ -112,4 +112,12 @@ evento `load`; a geometria é gerada em Web Worker.
 4. **Diferenças visuais deliberadas** do design estão listadas em `DESIGN.md`.
 5. **Conteúdo** da demonstração é placeholder (`[Nome Sobrenome]`, `[Foto real — …]`); o build de
    produção recusa esses placeholders.
-6. **Publicação** — ver o relatório final da entrega (push e deploy dependem de permissões externas).
+6. **Publicação não realizada nesta sessão** (16/10/2026):
+   - `git push` → HTTP 403: o Claude GitHub App não tem acesso a `aruanmf446-hub/site-dentista`.
+     Os commits existem só localmente até o acesso ser liberado.
+   - Vercel: a conta está conectada (plano Hobby), mas o contêiner não alcança `api.vercel.com`
+     (proxy recusa) e o deploy pela integração exigiria o código no GitHub ou o envio arquivo a
+     arquivo do conteúdo. Sem o push, não houve deploy.
+   - Pronto para publicar: `vercel.json` (framework Astro, `npm run build`, saída `dist`, cache e
+     cabeçalhos de segurança); sem variáveis, o build usa a demonstração `alva-demo` (fictícia,
+     `noindex`). Nenhum domínio foi vinculado e nenhum serviço pago foi configurado.
