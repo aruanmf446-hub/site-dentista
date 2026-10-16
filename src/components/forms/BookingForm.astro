@@ -202,6 +202,9 @@ const motivos = tratamento ? [tratamento, ...c.agendamento.motivos.filter((m) =>
     letter-spacing: 0;
     text-transform: none;
   }
+  .bf__err[hidden] {
+    display: none;
+  }
   .bf__err::before {
     content: '!';
     display: inline-grid;
@@ -271,7 +274,7 @@ const motivos = tratamento ? [tratamento, ...c.agendamento.motivos.filter((m) =>
     gap: 10px;
     flex-wrap: wrap;
   }
-  .bf__check {
+  .bf__field > .bf__check {
     display: flex;
     gap: 10px;
     align-items: flex-start;

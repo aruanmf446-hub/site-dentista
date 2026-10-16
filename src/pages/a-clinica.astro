@@ -1,0 +1,67 @@
+---
+/** Página institucional: a clínica, galeria, responsável técnico e unidades. */
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import PageHeader from '@/components/layout/PageHeader.astro';
+import Sobre from '@/components/sections/Sobre.astro';
+import Galeria from '@/components/sections/Galeria.astro';
+import Unidades from '@/components/sections/Unidades.astro';
+import CtaBand from '@/components/sections/CtaBand.astro';
+import Eyebrow from '@/components/ui/Eyebrow.astro';
+import site, { siteUrl, semDestaque } from '@/lib/site';
+import { breadcrumbLd } from '@/lib/seo';
+import { rotaSobreAtiva } from '@/lib/routes';
+
+if (!rotaSobreAtiva()) return Astro.redirect('/');
+const { c } = site;
+const base = siteUrl();
+---
+
+<BaseLayout
+  path="/a-clinica/"
+  title="A clínica"
+  description={semDestaque(c.sobre!.titulo) + ' ' + c.site.descricao}
+  jsonLd={[breadcrumbLd([{ nome: 'Início', url: `${base}/` }, { nome: 'A clínica', url: `${base}/a-clinica/` }])]}
+>
+  <div class="container page">
+    <PageHeader trilha={[{ nome: 'Início', href: '/' }, { nome: 'A clínica' }]} rotulo="A clínica" titulo={c.sobre!.titulo} />
+    <div class="page__section page__sobre"><Sobre /></div>
+    {site.ativo('galeria') && <div class="page__section"><Galeria /></div>}
+    <section class="page__section rt" aria-labelledby="rt-t">
+      <Eyebrow texto="Responsabilidade técnica" />
+      <h2 id="rt-t" class="rt__title">{c.legal.responsavelTecnico.nome}</h2>
+      <p class="rt__text">{c.legal.responsavelTecnico.cro} · {c.legal.razaoSocial} · CNPJ {c.legal.cnpj}</p>
+    </section>
+    {site.ativo('unidades') && <div class="page__section"><Unidades /></div>}
+  </div>
+  <CtaBand />
+</BaseLayout>
+
+<style>
+  .page {
+    padding-right: var(--gutter-r);
+  }
+  .page__section {
+    margin-top: var(--section-gap);
+  }
+  .page__sobre {
+    margin-top: 64px;
+  }
+  .page__sobre :global(.sobre__copy > .eyebrow),
+  .page__sobre :global(.sobre__title) {
+    display: none;
+  }
+  .rt__title {
+    margin-top: 18px;
+    font-family: var(--f-serif);
+    font-size: var(--fs-h2-sm);
+  }
+  .rt__text {
+    margin-top: 8px;
+    color: var(--c-text);
+  }
+  @media (max-width: 899px) {
+    .page {
+      padding-right: var(--gutter);
+    }
+  }
+</style>

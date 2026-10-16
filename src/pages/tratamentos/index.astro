@@ -1,0 +1,117 @@
+---
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import PageHeader from '@/components/layout/PageHeader.astro';
+import CtaBand from '@/components/sections/CtaBand.astro';
+import Icon from '@/components/ui/Icon.astro';
+import site, { siteUrl } from '@/lib/site';
+import { breadcrumbLd } from '@/lib/seo';
+const { c } = site;
+const base = siteUrl();
+const esp = (slug?: string) => c.especialidades.find((e) => e.slug === slug)?.nome;
+---
+
+<BaseLayout
+  path="/tratamentos/"
+  title="Tratamentos"
+  description={`Tratamentos odontológicos oferecidos pela ${c.marca.nome}: ${c.tratamentos.map((t) => t.nome.toLowerCase()).join(', ')}.`}
+  jsonLd={[breadcrumbLd([{ nome: 'Início', url: `${base}/` }, { nome: 'Tratamentos', url: `${base}/tratamentos/` }])]}
+>
+  <div class="container page">
+    <PageHeader
+      trilha={[{ nome: 'Início', href: '/' }, { nome: 'Tratamentos' }]}
+      rotulo="Tratamentos"
+      titulo="O que podemos *fazer por você.*"
+      texto="Cada tratamento começa por uma avaliação completa. Conheça os cuidados oferecidos e fale com a equipe para tirar dúvidas."
+    />
+    <ul role="list" class="tlist" data-reveal="rows">
+      {
+        c.tratamentos.map((t, i) => (
+          <li>
+            <a href={`/tratamentos/${t.slug}/`} class="tlist__row">
+              <span class="tlist__num">{String(i + 1).padStart(2, '0')}</span>
+              <span class="tlist__main">
+                <span class="tlist__name">{t.nome}</span>
+                <span class="tlist__sum">{t.resumo}</span>
+              </span>
+              {esp(t.especialidade) && <span class="tlist__esp">{esp(t.especialidade)}</span>}
+              <Icon name="arrow-right" size={20} class="tlist__arrow" />
+            </a>
+          </li>
+        ))
+      }
+    </ul>
+  </div>
+  <CtaBand />
+</BaseLayout>
+
+<style>
+  .page {
+    padding-right: var(--gutter-r);
+  }
+  .tlist {
+    margin: 64px 0 0;
+    padding: 0;
+    border-top: 1px solid var(--c-line);
+  }
+  .tlist li {
+    border-bottom: 1px solid var(--c-line);
+  }
+  .tlist__row {
+    display: grid;
+    grid-template-columns: 40px minmax(0, 1fr) auto 24px;
+    gap: 24px;
+    align-items: center;
+    padding: 26px 0;
+    color: var(--c-ink);
+    text-decoration: none;
+  }
+  .tlist__num {
+    font-size: 12px;
+    color: var(--c-muted);
+    font-variant-numeric: tabular-nums;
+  }
+  .tlist__name {
+    display: block;
+    font-family: var(--f-serif);
+    font-size: clamp(26px, 1.6vw + 18px, 36px);
+    line-height: 1.1;
+    transition: color 0.25s;
+  }
+  .tlist__sum {
+    display: block;
+    margin-top: 6px;
+    font-size: 15px;
+    color: var(--c-text);
+  }
+  .tlist__esp {
+    font-size: 12px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--c-muted);
+  }
+  .tlist__row:hover .tlist__name {
+    color: var(--c-primary);
+  }
+  .tlist__row :global(.tlist__arrow) {
+    transition: transform 0.3s var(--ease-out);
+  }
+  .tlist__row:hover :global(.tlist__arrow) {
+    transform: translateX(4px);
+  }
+  @media (max-width: 899px) {
+    .page {
+      padding-right: var(--gutter);
+    }
+    .tlist {
+      margin-top: 40px;
+    }
+    .tlist__row {
+      grid-template-columns: 28px minmax(0, 1fr) 20px;
+      gap: 14px;
+      padding: 20px 0;
+    }
+    .tlist__esp {
+      display: none;
+    }
+  }
+</style>

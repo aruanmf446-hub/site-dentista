@@ -1,0 +1,212 @@
+---
+/**
+ * /unidades/ e /unidades/<id>/ — páginas locais por filial (SEO local).
+ * Só existem quando há mais de uma unidade e o módulo Unidades está ligado.
+ */
+import type { GetStaticPaths } from 'astro';
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import PageHeader from '@/components/layout/PageHeader.astro';
+import Unidades from '@/components/sections/Unidades.astro';
+import ArchPhoto from '@/components/ui/ArchPhoto.astro';
+import Eyebrow from '@/components/ui/Eyebrow.astro';
+import Icon from '@/components/ui/Icon.astro';
+import WaLink from '@/components/ui/WaLink.astro';
+import CtaBand from '@/components/sections/CtaBand.astro';
+import site, { enderecoLinha, siteUrl } from '@/lib/site';
+import { breadcrumbLd, organizationLd } from '@/lib/seo';
+import { rotaUnidadesAtiva } from '@/lib/routes';
+import type { Unidade } from '@/config/clinic.schema';
+import { isReal } from '@/lib/placeholders';
+
+export const getStaticPaths = (() => {
+  if (!rotaUnidadesAtiva()) return [];
+  return [
+    { params: { slug: undefined }, props: { u: null } },
+    ...site.c.unidades.map((u) => ({ params: { slug: u.id }, props: { u } })),
+  ];
+}) satisfies GetStaticPaths;
+
+interface Props {
+  u: Unidade | null;
+}
+const { u } = Astro.props;
+const base = siteUrl();
+const equipe = u ? site.c.equipe.filter((p) => p.unidades.includes(u.id)) : [];
+const ld = u ? organizationLd(site.c, base).filter((x) => (x['@id'] as string | undefined)?.includes(`/unidades/${u.id}/`)) : [];
+const tel = u ? (isReal(u.telefone) ? u.telefone : null) : null;
+---
+
+{
+  !u ? (
+    <BaseLayout
+      path="/unidades/"
+      title="Unidades"
+      description={`Endereços, horários e WhatsApp das unidades da ${site.c.marca.nome}.`}
+      jsonLd={[breadcrumbLd([{ nome: 'Início', url: `${base}/` }, { nome: 'Unidades', url: `${base}/unidades/` }])]}
+    >
+      <div class="container page">
+        <PageHeader trilha={[{ nome: 'Início', href: '/' }, { nome: 'Unidades' }]} rotulo="Unidades" titulo="Sempre uma unidade *perto de você.*" />
+        <div class="page__section">
+          <Unidades />
+        </div>
+      </div>
+      <CtaBand />
+    </BaseLayout>
+  ) : (
+    <BaseLayout
+      path={`/unidades/${u.id}/`}
+      title={`${u.nome}`}
+      description={`${site.c.marca.nome} — ${u.nome}: ${enderecoLinha(u)}. Horários e WhatsApp da unidade.`}
+      jsonLd={[
+        ...ld,
+        breadcrumbLd([
+          { nome: 'Início', url: `${base}/` },
+          { nome: 'Unidades', url: `${base}/unidades/` },
+          { nome: u.nome, url: `${base}/unidades/${u.id}/` },
+        ]),
+      ]}
+    >
+      <div class="container page un">
+        <div class="un__grid">
+          <div>
+            <PageHeader
+              trilha={[{ nome: 'Início', href: '/' }, { nome: 'Unidades', href: '/unidades/' }, { nome: u.nome }]}
+              rotulo="Unidade"
+              titulo={u.nome}
+              texto={enderecoLinha(u)}
+            >
+              <div class="un__ctas">
+                <WaLink unidade={u.id} class="btn btn--primary btn--lg"><Icon name="whatsapp" />WhatsApp da unidade</WaLink>
+                {u.mapa && (
+                  <a href={u.mapa} class="btn btn--outline btn--lg" target="_blank" rel="noopener">
+                    <Icon name="pin" />Como chegar<span class="sr-only"> (abre em nova aba)</span>
+                  </a>
+                )}
+              </div>
+            </PageHeader>
+            <dl class="un__info" data-reveal="info">
+              <div>
+                <dt>Horários</dt>
+                <dd>{u.horarios.map((h) => <span>{h.dias} · {h.horas}</span>)}</dd>
+              </div>
+              {tel && (
+                <div>
+                  <dt>Telefone</dt>
+                  <dd><a href={`tel:${tel.replace(/[^\d+]/g, '')}`}>{tel}</a></dd>
+                </div>
+              )}
+              {u.observacao && (
+                <div>
+                  <dt>Observação</dt>
+                  <dd>{u.observacao}</dd>
+                </div>
+              )}
+            </dl>
+            {equipe.length > 0 && site.ativo('equipe') && (
+              <div class="un__team">
+                <Eyebrow texto="Quem atende nesta unidade" />
+                <ul role="list" class="rule-list" data-reveal="rows">
+                  {equipe.map((p) => (
+                    <li>
+                      <span>{p.pagina && p.bio.length ? <a href={`/equipe/${p.slug}/`}>{p.nome}</a> : p.nome}</span>
+                      <span class="un__muted">{p.especialidade} · {p.cro}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </div>
+          <div class="un__visual">
+            <ArchPhoto foto={u.fotos[0]} rotulo="[Foto real — fachada]" class="un__photo" eager sizes="(max-width: 899px) 70vw, 400px" />
+          </div>
+        </div>
+      </div>
+      <CtaBand mensagem={`Olá! Gostaria de agendar na ${u.nome}.`} />
+    </BaseLayout>
+  )
+}
+
+<style>
+  .page {
+    padding-right: var(--gutter-r);
+  }
+  .page__section {
+    margin-top: 40px;
+  }
+  .page__section :global(.unid > .eyebrow),
+  .page__section :global(.unid__title) {
+    display: none;
+  }
+  .un__grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 400px);
+    gap: 72px;
+  }
+  .un__ctas {
+    margin-top: 32px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+  .un__visual {
+    padding-top: clamp(112px, 12vw, 176px);
+  }
+  .un__photo {
+    aspect-ratio: 400 / 520;
+  }
+  .un__info {
+    margin-top: 48px;
+    display: grid;
+    gap: 22px;
+    max-width: 560px;
+  }
+  .un__info dt {
+    font-size: 11px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--c-muted);
+  }
+  .un__info dd {
+    margin: 6px 0 0;
+    display: flex;
+    flex-direction: column;
+    font-size: 16px;
+  }
+  .un__info a {
+    color: var(--c-ink);
+  }
+  .un__team {
+    margin-top: 48px;
+    max-width: 640px;
+  }
+  .un__team ul {
+    margin-top: 18px;
+  }
+  .un__team li {
+    display: flex;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 8px;
+    padding: 14px 0;
+  }
+  .un__team a {
+    color: var(--c-ink);
+  }
+  .un__muted {
+    color: var(--c-muted);
+    font-size: 14px;
+  }
+  @media (max-width: 899px) {
+    .page {
+      padding-right: var(--gutter);
+    }
+    .un__grid {
+      grid-template-columns: 1fr;
+      gap: 32px;
+    }
+    .un__visual {
+      padding-top: 0;
+      width: min(300px, 80%);
+    }
+  }
+</style>

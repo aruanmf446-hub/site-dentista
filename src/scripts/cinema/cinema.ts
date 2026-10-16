@@ -348,7 +348,6 @@ export async function initCinema(): Promise<void> {
 
   /* ---------- navegação: âncoras, foco e cliques na lista ---------- */
   const scrollTop = () => window.scrollY + root.getBoundingClientRect().top;
-  const vh = () => window.innerHeight;
   const timeToY = (t: number) => scrollTop() + (t / total) * (st.end - st.start);
   espHooks.scrollTo = (i: number) => {
     if (!esp) return false;
@@ -420,6 +419,5 @@ export async function initCinema(): Promise<void> {
     }
   });
   window.addEventListener('resize', () => ScrollTrigger.refresh());
-  html.classList.add('motion-ready');
   (window as unknown as { __cinema: unknown }).__cinema = { tl, state, cine, stage, segments, st };
 }

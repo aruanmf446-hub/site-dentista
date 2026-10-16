@@ -1,0 +1,123 @@
+---
+/**
+ * Política de Privacidade — modelo baseado na LGPD (Lei 13.709/2018) e no
+ * funcionamento real do template: sem cookies de rastreamento, sem banco de
+ * dados e sem formulário que envie dados ao servidor. Deve ser revisada pela
+ * clínica e por sua assessoria jurídica antes da publicação (COMPLIANCE.md).
+ */
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import PageHeader from '@/components/layout/PageHeader.astro';
+import site, { siteUrl } from '@/lib/site';
+import { breadcrumbLd } from '@/lib/seo';
+const { c } = site;
+const base = siteUrl();
+const enc = c.legal.encarregado;
+---
+
+<BaseLayout
+  path="/privacidade/"
+  title="Política de Privacidade"
+  description={`Como a ${c.marca.nome} trata dados pessoais neste site, conforme a LGPD.`}
+  jsonLd={[breadcrumbLd([{ nome: 'Início', url: `${base}/` }, { nome: 'Política de Privacidade', url: `${base}/privacidade/` }])]}
+>
+  <div class="container page">
+    <PageHeader
+      trilha={[{ nome: 'Início', href: '/' }, { nome: 'Política de Privacidade' }]}
+      rotulo="LGPD"
+      titulo="Política de *Privacidade*"
+      texto={c.legal.politicaAtualizadaEm ? `Atualizada em ${c.legal.politicaAtualizadaEm}.` : undefined}
+    />
+    <div class="legal">
+      <h2>1. Quem somos</h2>
+      <p>
+        Este site pertence a {c.legal.razaoSocial} (CNPJ {c.legal.cnpj}), que atua como controladora dos dados pessoais
+        tratados por meio dele. Responsável técnico: {c.legal.responsavelTecnico.nome}, {c.legal.responsavelTecnico.cro}.
+      </p>
+
+      <h2>2. Quais dados o site coleta</h2>
+      <p>
+        O site não possui cadastro, área de login nem banco de dados. Ao usar o formulário “Solicite seu horário” ou os
+        botões de WhatsApp, o próprio site monta uma mensagem com as informações que você escolher — nome, unidade,
+        interesse e período de preferência — e abre o WhatsApp no seu aparelho. <strong>Essas informações não são
+        enviadas nem armazenadas pelo site</strong>: elas só chegam à clínica se você enviar a mensagem pelo WhatsApp.
+      </p>
+      <p>
+        Não pedimos dados sensíveis (como informações detalhadas de saúde) no site. Detalhes clínicos devem ser tratados
+        diretamente com a equipe, durante o atendimento.
+      </p>
+
+      <h2>3. Para que usamos os dados</h2>
+      <p>
+        As mensagens recebidas pelo WhatsApp são usadas apenas para responder ao seu pedido de contato e agendar o
+        atendimento (base legal: procedimentos preliminares relacionados a contrato, a pedido do titular, e
+        consentimento, art. 7º, I e V, da LGPD).
+      </p>
+
+      <h2>4. Compartilhamento</h2>
+      <p>
+        A conversa ocorre no WhatsApp, serviço da Meta, sujeito à política de privacidade própria. A clínica não vende
+        nem compartilha seus dados com terceiros para fins de marketing.
+      </p>
+
+      <h2>5. Cookies e medição</h2>
+      <p>
+        Este site não utiliza cookies de rastreamento nem ferramentas de publicidade. As fontes tipográficas são
+        servidas pelo próprio site, sem chamadas a serviços externos. Caso a clínica passe a usar ferramentas de
+        medição, esta política será atualizada e, quando exigido, será solicitado consentimento.
+      </p>
+
+      <h2>6. Seus direitos</h2>
+      <p>
+        Você pode solicitar confirmação de tratamento, acesso, correção, anonimização, portabilidade, eliminação e
+        informações sobre compartilhamento de dados, além de revogar o consentimento (art. 18 da LGPD).
+      </p>
+
+      <h2>7. Encarregado (DPO) e contato</h2>
+      <p>
+        {enc?.nome ? `${enc.nome} — ` : ''}{enc?.email ? <>E-mail: {enc.email.includes('[') ? enc.email : <a href={`mailto:${enc.email}`}>{enc.email}</a>}</> : 'Use os canais de contato da clínica.'}
+      </p>
+
+      <h2>8. Segurança e retenção</h2>
+      <p>
+        As conversas são mantidas pelo tempo necessário ao atendimento e às obrigações legais e regulatórias da
+        clínica, incluindo as relativas ao prontuário odontológico, e protegidas por medidas técnicas e administrativas
+        adequadas.
+      </p>
+      {site.demo && <p class="legal__demo">Modelo do template: revise com a assessoria jurídica da clínica antes de publicar.</p>}
+    </div>
+  </div>
+</BaseLayout>
+
+<style>
+  .page {
+    padding-right: var(--gutter-r);
+    padding-bottom: var(--section-gap);
+  }
+  .legal {
+    margin-top: 56px;
+    max-width: 720px;
+  }
+  .legal h2 {
+    margin-top: 44px;
+    font-family: var(--f-serif);
+    font-size: 28px;
+    line-height: 1.15;
+  }
+  .legal p {
+    margin-top: 14px;
+    font-size: 16px;
+    line-height: 1.7;
+    color: var(--c-ink-2);
+  }
+  .legal__demo {
+    padding: 12px 16px;
+    border: 1px dashed var(--c-line-strong);
+    border-radius: 12px;
+    color: var(--c-muted) !important;
+  }
+  @media (max-width: 899px) {
+    .page {
+      padding-right: var(--gutter);
+    }
+  }
+</style>
