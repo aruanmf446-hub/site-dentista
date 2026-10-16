@@ -167,11 +167,14 @@ test.describe('empilhado (mobile)', () => {
     await page.goto(url('alva-demo', '/'));
     await waitScene(page);
     await expect(page.locator('html')).not.toHaveClass(/is-cinema/);
-    const rot0 = await page.evaluate(() => (window as any).__stacked.views.find((v: any) => v.name === 'hero').state.toothRotY);
+    const heroRot = () => page.evaluate(() => (window as any).__stacked.views.find((v: any) => v.name === 'hero').state.toothRotY as number);
+    // parte do topo (a página pode ter rolado durante a espera do 3D)
+    await page.evaluate(() => window.scrollTo({ top: 0, behavior: 'instant' }));
+    await page.waitForFunction(() => Math.abs((window as any).__stacked.views.find((v: any) => v.name === 'hero').state.toothRotY + 22) < 0.5);
+    const rot0 = await heroRot();
     await page.evaluate(() => window.scrollTo({ top: 300, behavior: 'instant' }));
-    await page.waitForTimeout(400);
-    const rot1 = await page.evaluate(() => (window as any).__stacked.views.find((v: any) => v.name === 'hero').state.toothRotY);
-    expect(rot1).toBeGreaterThan(rot0 + 3);
+    await page.waitForFunction((r0) => (window as any).__stacked.views.find((v: any) => v.name === 'hero').state.toothRotY > r0 + 3, rot0, { timeout: 5_000 });
+    expect(await heroRot()).toBeGreaterThan(rot0 + 3);
     await page.screenshot({ path: `${OUT}/mobile-hero.png` });
     await page.locator('#especialidades').scrollIntoViewIfNeeded();
     await page.locator('[data-spec-index="1"]').click();
