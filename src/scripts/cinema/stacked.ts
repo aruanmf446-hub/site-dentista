@@ -145,6 +145,7 @@ export async function initStacked(): Promise<void> {
     views.forEach((v) => (v.dirty = true));
   });
   stage.setAssets(assets);
+  await stage.warmup();
 
   let last = performance.now();
   let acc = 0;

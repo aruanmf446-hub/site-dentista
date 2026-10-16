@@ -184,6 +184,10 @@ const total = segments.reduce((acc, s) => acc + s.len, 0);
   html.is-cinema .panel [data-cine] {
     will-change: transform, opacity;
   }
+  /* até a timeline assumir, só o hero aparece (evita painéis sobrepostos) */
+  html.is-cinema:not(.cinema-ready) .panel:not(.hero) {
+    visibility: hidden;
+  }
   html.is-cinema.cinema-ready .panel:not(.is-active) {
     pointer-events: none;
   }

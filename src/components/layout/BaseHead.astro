@@ -73,7 +73,11 @@ const ld = [...(path === '/' ? organizationLd(c, base) : []), ...jsonLd];
     d.classList.add('js');
     var rm = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     if (!rm) d.classList.add('motion');
-    if (cinema && !rm && window.innerWidth >= 900 && 'WebGLRenderingContext' in window) d.classList.add('is-cinema');
+    var semWebgl = false;
+    try {
+      semWebgl = sessionStorage.getItem('alva:no-webgl') === '1';
+    } catch (e) {}
+    if (cinema && !rm && !semWebgl && window.innerWidth >= 900 && 'WebGLRenderingContext' in window) d.classList.add('is-cinema');
     window.setTimeout(function () {
       if (!d.classList.contains('motion-ready')) d.classList.remove('motion');
     }, 4000);
