@@ -1,0 +1,14 @@
+node_modules/
+dist/
+dist-*/
+.astro/
+.vercel/
+.output/
+test-results/
+playwright-report/
+tests/.artifacts/
+*.log
+.DS_Store
+.env
+.env.*
+!.env.example

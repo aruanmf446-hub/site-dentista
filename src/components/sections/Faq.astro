@@ -1,0 +1,106 @@
+---
+/** FAQ (derivada do design): perguntas em serif, filetes finos, <details> nativo. */
+import site from '@/lib/site';
+import Eyebrow from '@/components/ui/Eyebrow.astro';
+import Title from '@/components/ui/Title.astro';
+import Icon from '@/components/ui/Icon.astro';
+interface Props {
+  numero?: string | undefined;
+  itens?: { pergunta: string; resposta: string }[];
+  titulo?: string;
+  id?: string;
+}
+const { numero, itens = site.c.faq.itens, titulo = site.c.faq.titulo, id = 'faq' } = Astro.props;
+---
+
+<section id={id} class="faq" aria-labelledby={`${id}-title`} data-section="faq">
+  <div class="faq__head">
+    <Eyebrow numero={numero} texto="Dúvidas" modulo="Módulo opcional" />
+    <Title id={`${id}-title`} class="faq__title" text={titulo} data-reveal="title" />
+  </div>
+  <div class="faq__list rule-list" data-reveal="rows">
+    {
+      itens.map((q) => (
+        <details class="faq__item">
+          <summary>
+            <span>{q.pergunta}</span>
+            <Icon name="chevron-down" size={20} />
+          </summary>
+          <p>{q.resposta}</p>
+        </details>
+      ))
+    }
+  </div>
+</section>
+
+<style>
+  .faq {
+    display: grid;
+    grid-template-columns: minmax(0, 430px) minmax(0, 1fr);
+    gap: clamp(40px, 6.25vw, 90px);
+  }
+  .faq__title {
+    margin-top: 22px;
+    font-family: var(--f-serif);
+    font-size: var(--fs-h2-sm);
+    line-height: 1.05;
+  }
+  .faq__list {
+    border-top: 1px solid var(--c-line);
+  }
+  .faq__item {
+    border-bottom: 1px solid var(--c-line);
+  }
+  .faq__item summary {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    min-height: 72px;
+    padding: 12px 0;
+    font-family: var(--f-serif);
+    font-size: clamp(21px, 1.2vw + 14px, 26px);
+    line-height: 1.2;
+    cursor: pointer;
+    list-style: none;
+  }
+  .faq__item summary::-webkit-details-marker {
+    display: none;
+  }
+  .faq__item summary :global(.icon) {
+    transition: transform 0.35s var(--ease-out);
+  }
+  .faq__item[open] summary :global(.icon) {
+    transform: rotate(180deg);
+  }
+  .faq__item[open] summary {
+    color: var(--c-primary);
+  }
+  .faq__item p {
+    padding: 0 48px 24px 0;
+    font-size: 16px;
+    line-height: 1.65;
+    color: var(--c-text);
+  }
+  .faq__item[open] p {
+    animation: faq-in 0.4s var(--ease-out);
+  }
+  @keyframes faq-in {
+    from {
+      opacity: 0;
+      transform: translateY(-6px);
+    }
+  }
+  @media (max-width: 899px) {
+    .faq {
+      grid-template-columns: 1fr;
+      gap: 28px;
+    }
+    .faq__title {
+      margin-top: 16px;
+    }
+    .faq__item p {
+      padding-right: 0;
+    }
+  }
+</style>

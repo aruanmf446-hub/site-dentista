@@ -1,0 +1,73 @@
+/*
+ * Tokens do template — identidade do Claude Design (Alva).
+ * As cores derivadas da primária (--c-primary*, --c-on-primary*, --c-surface-alt)
+ * são injetadas no <head> a partir da configuração do cliente (lib/theme.ts).
+ */
+:root {
+  /* Neutros do design */
+  --c-bg: #fcfaf8;
+  --c-ink: #1f1719;
+  --c-ink-2: #3e3437;
+  --c-text: #5e5154;
+  --c-muted: #6e6063;
+  --c-faint: #776a6d; /* substitui #9A8C8F do design: contraste ≥ 4,5:1 em texto pequeno */
+  --c-line: #e6dcd9;
+  --c-line-strong: #d8cbc8;
+  --c-line-soft: #eee5e3;
+  --c-arch-line: #e2d4d1;
+  --c-surface: #ffffff;
+  --c-placeholder: #efe6e3;
+  --c-progress-rule: #c9bbbe;
+
+  /* Fallback da primária (sobrescrito pelo tema do cliente) */
+  --c-primary: #5b1626;
+  --c-primary-hover: #3e0f1a;
+  --c-primary-dark: #320c15;
+  --c-on-primary: #fbf4f2;
+  --c-on-primary-2: #f7edea;
+  --c-on-primary-muted: #e3cdd0;
+  --c-on-primary-soft: #dcc3c6;
+  --c-on-primary-line: rgba(247, 237, 234, 0.24);
+  --c-surface-alt: #f4ecea;
+
+  /* Tipografia */
+  --f-serif: 'Instrument Serif', 'Iowan Old Style', 'Times New Roman', serif;
+  --f-sans: 'Hanken Grotesk Variable', 'Hanken Grotesk', system-ui, -apple-system, 'Segoe UI', sans-serif;
+
+  /* Escalas fluidas (390 → 1440) */
+  --fs-hero: clamp(3.125rem, 1.375rem + 5vw, 5.875rem); /* 50 → 94 */
+  --fs-display: clamp(2.5rem, 1.15rem + 3.6vw, 4.875rem); /* 40 → 78 */
+  --fs-h2: clamp(2.25rem, 1.6rem + 1.55vw, 3.625rem); /* 36 → 58 */
+  --fs-h2-sm: clamp(2rem, 1.55rem + 1.15vw, 2.75rem); /* 32 → 44 */
+  --fs-h3: clamp(1.375rem, 1.25rem + 0.3vw, 1.5625rem); /* 22 → 25 */
+  --fs-lead: clamp(0.9375rem, 0.88rem + 0.25vw, 1.125rem); /* 15 → 18 */
+  --fs-body: clamp(0.9375rem, 0.9rem + 0.12vw, 1.0625rem); /* 15 → 17 */
+  --fs-small: 0.875rem;
+  --fs-xs: 0.8125rem;
+  --fs-eyebrow: clamp(0.6875rem, 0.66rem + 0.08vw, 0.75rem); /* 11 → 12 */
+
+  /* Espaço */
+  --gutter: clamp(20px, 6.667vw, 96px);
+  --gutter-r: clamp(20px, 8.89vw, 128px);
+  --max: 1440px;
+  --section-gap: clamp(88px, 6rem + 3vw, 140px);
+
+  /* Forma */
+  --r-pill: 999px;
+  --shadow-float: 0 10px 30px -12px rgba(62, 13, 24, 0.35);
+  --shadow-pill: 0 12px 40px -22px rgba(31, 23, 25, 0.4);
+  --ease-out: cubic-bezier(0.22, 0.61, 0.36, 1);
+  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+
+  /* Componentes fixos */
+  --header-h: 88px;
+  --mobile-bar-h: 0px;
+  --focus: 0 0 0 2px var(--c-bg), 0 0 0 4px var(--c-primary);
+}
+
+@media (max-width: 899px) {
+  :root {
+    --header-h: 64px;
+    --mobile-bar-h: calc(76px + env(safe-area-inset-bottom, 0px));
+  }
+}

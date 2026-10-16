@@ -1,0 +1,203 @@
+---
+/** Corpo clínico — retratos em arco, CRO e unidade; bio expansível ou página própria. */
+import site, { unidadeNome } from '@/lib/site';
+import Eyebrow from '@/components/ui/Eyebrow.astro';
+import Title from '@/components/ui/Title.astro';
+import Icon from '@/components/ui/Icon.astro';
+import ArchPhoto from '@/components/ui/ArchPhoto.astro';
+interface Props {
+  numero?: string | undefined;
+  limite?: number;
+}
+const { numero, limite = 8 } = Astro.props;
+const { c } = site;
+const equipe = c.equipe.slice(0, limite);
+const temPaginaEquipe = c.equipe.length > limite || site.equipeComPagina.length > 0;
+const cols = Math.min(4, Math.max(1, equipe.length));
+---
+
+<section id="equipe" class="equipe" aria-labelledby="equipe-title" data-section="equipe">
+  <div class="equipe__head">
+    <div>
+      <Eyebrow numero={numero} texto="Corpo clínico" modulo="Módulo opcional" />
+      <Title id="equipe-title" class="equipe__title" text={c.equipeSecao.titulo} data-reveal="title" />
+    </div>
+    {
+      temPaginaEquipe && (
+        <a href="/equipe/" class="equipe__all">
+          Ver equipe completa
+          <Icon name="arrow-right" size={16} />
+        </a>
+      )
+    }
+  </div>
+  <ul role="list" class="equipe__grid" style={`--cols:${cols}`} data-reveal="team">
+    {
+      equipe.map((p) => (
+        <li class="pro">
+          <ArchPhoto foto={p.foto} rotulo="[Retrato do(a) dentista]" class="pro__photo" labelAt="bottom" sizes="(max-width: 899px) 45vw, 280px" />
+          <h3 class="pro__name">{p.pagina && p.bio.length ? <a href={`/equipe/${p.slug}/`}>{p.nome}</a> : p.nome}</h3>
+          <p class="pro__esp">{p.especialidade}</p>
+          <p class="pro__meta">
+            {p.cro}
+            {p.unidades.length > 0 && site.multiUnidade && <> · {p.unidades.map(unidadeNome).join(' e ')}</>}
+          </p>
+          {p.bio.length > 0 && !p.pagina && (
+            <details class="pro__bio">
+              <summary>
+                Sobre <Icon name="chevron-down" size={14} />
+              </summary>
+              {p.bio.map((b) => <p>{b}</p>)}
+              {p.formacao.length > 0 && (
+                <ul role="list">
+                  {p.formacao.map((f) => <li>{f}</li>)}
+                </ul>
+              )}
+            </details>
+          )}
+          {p.pagina && p.bio.length > 0 && (
+            <a class="pro__more" href={`/equipe/${p.slug}/`}>
+              Ver perfil <Icon name="arrow-right" size={14} />
+            </a>
+          )}
+        </li>
+      ))
+    }
+  </ul>
+</section>
+
+<style>
+  .equipe__head {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 24px;
+    flex-wrap: wrap;
+  }
+  .equipe__title {
+    margin-top: 22px;
+    font-family: var(--f-serif);
+    font-size: clamp(2.25rem, 1.65rem + 1.45vw, 3.375rem);
+    line-height: 1.02;
+  }
+  .equipe__all {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 44px;
+    font-size: 14px;
+    font-weight: 600;
+    text-decoration: none;
+    padding-bottom: 0;
+  }
+  .equipe__grid {
+    margin: 48px 0 0;
+    padding: 0;
+    display: grid;
+    grid-template-columns: repeat(var(--cols), minmax(0, 1fr));
+    gap: 32px;
+  }
+  .equipe__grid:has(> :nth-child(2):last-child),
+  .equipe__grid:has(> :only-child) {
+    max-width: 640px;
+  }
+  .pro__photo {
+    height: 360px;
+  }
+  .pro__photo :global(.ph__label) {
+    bottom: 20px;
+  }
+  .pro__name {
+    margin-top: 18px;
+    font-family: var(--f-serif);
+    font-size: 25px;
+    line-height: 1.15;
+  }
+  .pro__name a {
+    color: inherit;
+    text-decoration: none;
+  }
+  .pro__name a:hover {
+    color: var(--c-primary);
+  }
+  .pro__esp {
+    margin-top: 4px;
+    font-size: 14px;
+    color: var(--c-ink-2);
+  }
+  .pro__meta {
+    margin-top: 6px;
+    font-size: 12px;
+    color: var(--c-muted);
+  }
+  .pro__bio {
+    margin-top: 10px;
+    font-size: 14px;
+    color: var(--c-text);
+  }
+  .pro__bio summary {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    min-height: 44px;
+    cursor: pointer;
+    font-weight: 600;
+    color: var(--c-primary);
+    list-style: none;
+  }
+  .pro__bio summary::-webkit-details-marker {
+    display: none;
+  }
+  .pro__bio[open] summary :global(.icon) {
+    transform: rotate(180deg);
+  }
+  .pro__bio p + p,
+  .pro__bio ul {
+    margin-top: 8px;
+  }
+  .pro__bio ul {
+    padding-left: 18px;
+  }
+  .pro__more {
+    margin-top: 8px;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    min-height: 44px;
+    font-size: 14px;
+    font-weight: 600;
+    text-decoration: none;
+  }
+  @media (max-width: 1239px) {
+    .equipe__grid {
+      grid-template-columns: repeat(min(var(--cols), 3), minmax(0, 1fr));
+    }
+    .pro__photo {
+      height: auto;
+      aspect-ratio: 280 / 360;
+    }
+  }
+  @media (max-width: 899px) {
+    .equipe__grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 28px 16px;
+      margin-top: 32px;
+    }
+    .equipe__title {
+      margin-top: 16px;
+    }
+    .pro__name {
+      font-size: 21px;
+      margin-top: 14px;
+    }
+    .pro__photo :global(.ph__label) {
+      font-size: 10px;
+      padding: 6px 10px;
+    }
+  }
+  @media (max-width: 359px) {
+    .equipe__grid {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>

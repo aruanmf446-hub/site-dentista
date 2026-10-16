@@ -1,0 +1,92 @@
+---
+/**
+ * Índice de progresso 00–04 à direita (desktop). Os capítulos vêm das
+ * seções ativas; cada item é um link navegável (corrige o design, que usava spans).
+ */
+import site from '@/lib/site';
+---
+
+<nav class="progress" aria-label="Progresso da página" data-progress>
+  <ol role="list">
+    {
+      site.capitulos.map((cap) => (
+        <li>
+          <a href={`#${cap.ancora}`} data-chapter={cap.id} data-anchor={cap.ancora}>
+            <span class="progress__num">{cap.numero}</span>
+            <span class="sr-only">{cap.rotulo}</span>
+            <span class="progress__rule" aria-hidden="true" />
+          </a>
+        </li>
+      ))
+    }
+  </ol>
+</nav>
+
+<style>
+  .progress {
+    position: fixed;
+    right: 30px;
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 40;
+    transition: opacity 0.4s var(--ease-out);
+  }
+  .progress ol {
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    align-items: flex-end;
+  }
+  .progress a {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 32px;
+    min-width: 44px;
+    justify-content: flex-end;
+    font-size: 11px;
+    color: var(--c-faint);
+    text-decoration: none;
+    font-variant-numeric: tabular-nums;
+    transition: color 0.3s var(--ease-out);
+  }
+  .progress__rule {
+    display: block;
+    width: 10px;
+    height: 1px;
+    background: var(--c-progress-rule);
+    transition:
+      width 0.4s var(--ease-out),
+      background-color 0.3s;
+  }
+  .progress a:hover {
+    color: var(--c-ink);
+  }
+  .progress a[aria-current='true'] {
+    color: var(--c-primary);
+    font-weight: 600;
+  }
+  .progress a[aria-current='true'] .progress__rule {
+    width: 22px;
+    background: var(--c-primary);
+  }
+  .progress.on-dark a {
+    color: var(--c-on-primary-muted);
+  }
+  .progress.on-dark .progress__rule {
+    background: var(--c-on-primary-soft);
+  }
+  .progress.on-dark a[aria-current='true'] {
+    color: var(--c-on-primary);
+  }
+  .progress.on-dark a[aria-current='true'] .progress__rule {
+    background: var(--c-on-primary);
+  }
+  @media (max-width: 899px) {
+    .progress {
+      display: none;
+    }
+  }
+</style>

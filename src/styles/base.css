@@ -1,0 +1,233 @@
+@import '@fontsource/instrument-serif/latin-400.css';
+@import '@fontsource/instrument-serif/latin-400-italic.css';
+@import '@fontsource-variable/hanken-grotesk/wght.css';
+@import './tokens.css';
+@import './buttons.css';
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+  scroll-padding-top: calc(var(--header-h) + 12px);
+  scroll-padding-bottom: var(--mobile-bar-h);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  html:not(.is-cinema) {
+    scroll-behavior: smooth;
+  }
+}
+
+body {
+  margin: 0;
+  background: var(--c-bg);
+  color: var(--c-ink);
+  font-family: var(--f-sans);
+  font-size: var(--fs-body);
+  line-height: 1.6;
+  font-optical-sizing: auto;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  overflow-x: clip;
+  padding-bottom: var(--mobile-bar-h);
+}
+
+img,
+svg,
+canvas,
+video {
+  display: block;
+  max-width: 100%;
+}
+
+img {
+  height: auto;
+}
+
+a {
+  color: var(--c-primary);
+}
+a:hover {
+  color: var(--c-primary-hover);
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+  color: inherit;
+}
+
+button {
+  cursor: pointer;
+}
+
+h1,
+h2,
+h3,
+h4 {
+  margin: 0;
+  font-weight: 400;
+}
+
+p,
+ul,
+ol,
+dl,
+dd,
+figure,
+blockquote {
+  margin: 0;
+}
+
+ul[role='list'],
+ol[role='list'] {
+  list-style: none;
+  padding: 0;
+}
+
+em.destaque {
+  font-style: italic;
+  color: var(--c-primary);
+}
+
+.on-primary em.destaque {
+  color: inherit;
+}
+
+/* Foco visível em todo elemento interativo (WCAG 2.4.7 / 2.4.11). */
+:focus-visible {
+  outline: 2px solid var(--c-primary);
+  outline-offset: 3px;
+  border-radius: 4px;
+}
+.on-primary :focus-visible {
+  outline-color: var(--c-on-primary);
+}
+
+.sr-only {
+  position: absolute !important;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.skip-link {
+  position: fixed;
+  left: 16px;
+  top: -80px;
+  z-index: 1000;
+  padding: 12px 18px;
+  border-radius: var(--r-pill);
+  background: var(--c-ink);
+  color: #fff;
+  text-decoration: none;
+  font-size: var(--fs-small);
+  transition: top 0.2s var(--ease-out);
+}
+.skip-link:focus {
+  top: 12px;
+  color: #fff;
+}
+
+.container {
+  width: 100%;
+  max-width: var(--max);
+  margin-inline: auto;
+  padding-inline: var(--gutter);
+}
+
+.serif {
+  font-family: var(--f-serif);
+  font-weight: 400;
+}
+
+.h2 {
+  font-family: var(--f-serif);
+  font-size: var(--fs-h2);
+  line-height: 1.02;
+  letter-spacing: -0.01em;
+}
+
+.h2-sm {
+  font-family: var(--f-serif);
+  font-size: var(--fs-h2-sm);
+  line-height: 1.05;
+}
+
+.lead {
+  font-size: var(--fs-lead);
+  line-height: 1.6;
+  color: var(--c-text);
+}
+
+.muted {
+  color: var(--c-muted);
+}
+
+/* Listas com filetes finas (assinatura do design) */
+.rule-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  border-top: 1px solid var(--c-line);
+}
+.rule-list > li {
+  border-bottom: 1px solid var(--c-line);
+}
+
+/* Etiqueta "Módulo opcional" — visível apenas no modo demonstração. */
+.module-tag {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: var(--r-pill);
+  border: 1px dashed var(--c-progress-rule);
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  line-height: 1.2;
+}
+
+/* Placeholder fotográfico do design (hachurado + rótulo) */
+.ph {
+  background-color: var(--c-placeholder);
+  background-image: repeating-linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--c-primary) 7%, transparent) 0 1px,
+    transparent 1px 14px
+  );
+}
+.ph__label {
+  padding: 8px 14px;
+  border-radius: var(--r-pill);
+  background: var(--c-bg);
+  color: var(--c-text);
+  font-size: 12px;
+  line-height: 1.3;
+  text-align: center;
+  max-width: 90%;
+}
+
+.icon {
+  flex: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

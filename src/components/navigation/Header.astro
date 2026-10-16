@@ -1,0 +1,395 @@
+---
+/**
+ * Header em dois estados, como no design:
+ * - completo (hero): marca + descritor, menu, WhatsApp e "Agendar consulta";
+ * - compacto (demais seções): pílula branca flutuante centralizada.
+ * Abaixo de 900 px: barra com marca e botão de menu (diálogo em tela cheia).
+ * Os itens de menu vêm de lib/site.ts e só incluem seções ativas.
+ */
+import site from '@/lib/site';
+import Wordmark from '@/components/ui/Wordmark.astro';
+import Icon from '@/components/ui/Icon.astro';
+import WaLink from '@/components/ui/WaLink.astro';
+
+interface Props {
+  /** página inicial usa âncoras locais e scrollspy */
+  home?: boolean;
+}
+const { home = false } = Astro.props;
+const nav = site.nav;
+const pillNav = nav.length > 5 ? nav.filter((n) => !n.secundario) : nav;
+---
+
+<header class="hdr" data-header data-home={home ? '1' : undefined}>
+  <div class="hdr-full" data-header-full>
+    <div class="hdr-full__inner">
+      <a href="/" class="hdr__brand" aria-label={`${site.c.marca.nome} — início`}>
+        <Wordmark size="lg" descritor />
+      </a>
+      <nav aria-label="Principal" class="hdr-full__nav">
+        <ul role="list">
+          {nav.map((n) => <li><a href={n.href} data-nav={n.id}>{n.rotulo}</a></li>)}
+        </ul>
+      </nav>
+      <div class="hdr-full__actions">
+        <WaLink class="hdr-full__wa">
+          <Icon name="whatsapp" />
+          WhatsApp
+        </WaLink>
+        <a href="/#agendamento" class="btn btn--primary btn--md hdr-full__cta">Agendar consulta</a>
+        <button type="button" class="hdr__menu-btn" aria-label="Abrir menu" aria-haspopup="dialog" aria-controls="menu-dialog" data-menu-open>
+          <Icon name="menu" size={22} />
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div class="hdr-pill" data-header-pill inert>
+    <a href="/" class="hdr__brand" aria-label={`${site.c.marca.nome} — início`}>
+      <Wordmark size="md" />
+    </a>
+    <nav aria-label="Principal (compacto)" class="hdr-pill__nav">
+      <ul role="list">
+        {pillNav.map((n) => <li><a href={n.href} data-nav={n.id}>{n.rotulo}</a></li>)}
+      </ul>
+    </nav>
+    <a href="/#agendamento" class="btn btn--primary btn--sm">Agendar</a>
+    <button type="button" class="hdr__menu-btn hdr__menu-btn--pill" aria-label="Abrir menu" aria-haspopup="dialog" aria-controls="menu-dialog" data-menu-open>
+      <Icon name="menu" size={22} />
+    </button>
+  </div>
+</header>
+
+<dialog id="menu-dialog" class="menu" aria-label="Menu" data-menu>
+  <div class="menu__top">
+    <a href="/" class="hdr__brand" aria-label={`${site.c.marca.nome} — início`} data-menu-link>
+      <Wordmark size="md" />
+    </a>
+    <button type="button" class="hdr__menu-btn" aria-label="Fechar menu" data-menu-close>
+      <Icon name="close" size={22} />
+    </button>
+  </div>
+  <nav aria-label="Menu" class="menu__nav">
+    <ul role="list">
+      {
+        nav.map((n, i) => (
+          <li style={`--i:${i}`}>
+            <a href={n.href} data-menu-link data-nav={n.id}>
+              {n.rotulo}
+              <Icon name="arrow-right" size={18} />
+            </a>
+          </li>
+        ))
+      }
+      <li style={`--i:${nav.length}`}><a href="/tratamentos/" data-menu-link>Todos os tratamentos<Icon name="arrow-right" size={18} /></a></li>
+    </ul>
+  </nav>
+  <div class="menu__actions">
+    <WaLink class="btn btn--primary btn--lg btn--block"><Icon name="whatsapp" size={20} />Falar no WhatsApp</WaLink>
+    <a href="/#agendamento" class="btn btn--outline btn--lg btn--block" data-menu-link>Agendar consulta</a>
+    {site.telefone && <a href={`tel:${site.telefone.replace(/[^\d+]/g, '')}`} class="menu__tel"><Icon name="phone" />{site.telefone}</a>}
+  </div>
+</dialog>
+
+<style>
+  .hdr {
+    position: fixed;
+    inset: 0 0 auto 0;
+    z-index: 60;
+    pointer-events: none;
+  }
+  .hdr a {
+    text-decoration: none;
+    color: var(--c-ink);
+  }
+  .hdr__brand {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+  }
+  .hdr-full {
+    pointer-events: auto;
+    transition:
+      opacity 0.35s var(--ease-out),
+      transform 0.45s var(--ease-out),
+      visibility 0s linear 0s;
+  }
+  .hdr-full__inner {
+    max-width: var(--max);
+    margin-inline: auto;
+    height: 88px;
+    padding-inline: var(--gutter);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 24px;
+  }
+  .hdr-full__nav ul {
+    display: flex;
+    gap: 34px;
+    margin: 0;
+    padding: 0;
+    font-size: 14px;
+  }
+  .hdr-full__nav a,
+  .hdr-pill__nav a {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+  }
+  .hdr-full__nav a::after,
+  .hdr-pill__nav a::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 10px;
+    height: 1px;
+    background: currentColor;
+    transform: scaleX(0);
+    transform-origin: right;
+    transition: transform 0.35s var(--ease-out);
+  }
+  .hdr-full__nav a:hover::after,
+  .hdr-pill__nav a:hover::after {
+    transform: scaleX(1);
+    transform-origin: left;
+  }
+  .hdr a[aria-current='true'] {
+    color: var(--c-primary);
+    font-weight: 600;
+  }
+  .hdr-full__actions {
+    display: flex;
+    align-items: center;
+    gap: 22px;
+  }
+  .hdr-full__wa {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+    min-height: 44px;
+  }
+  .hdr__menu-btn {
+    display: none;
+    width: 44px;
+    height: 44px;
+    border: 0;
+    border-radius: 50%;
+    background: transparent;
+    color: var(--c-ink);
+    align-items: center;
+    justify-content: center;
+  }
+
+  /* Pílula compacta */
+  .hdr-pill {
+    pointer-events: auto;
+    position: absolute;
+    left: 50%;
+    top: 18px;
+    height: 60px;
+    padding: 0 8px 0 22px;
+    display: flex;
+    align-items: center;
+    gap: 30px;
+    border-radius: var(--r-pill);
+    background: var(--c-surface);
+    border: 1px solid var(--c-line-soft);
+    box-shadow: var(--shadow-pill);
+    transform: translate(-50%, -140%);
+    opacity: 0;
+    visibility: hidden;
+    transition:
+      transform 0.55s var(--ease-out),
+      opacity 0.3s var(--ease-out),
+      visibility 0s linear 0.55s,
+      box-shadow 0.4s;
+  }
+  .hdr-pill__nav ul {
+    display: flex;
+    gap: 24px;
+    margin: 0;
+    padding: 0;
+    font-size: 13px;
+  }
+  .hdr.is-compact .hdr-pill {
+    transform: translate(-50%, 0);
+    opacity: 1;
+    visibility: visible;
+    transition:
+      transform 0.55s var(--ease-out),
+      opacity 0.3s var(--ease-out),
+      visibility 0s,
+      box-shadow 0.4s;
+  }
+  .hdr.is-compact .hdr-full {
+    opacity: 0;
+    transform: translateY(-24px);
+    visibility: hidden;
+    transition:
+      opacity 0.3s var(--ease-out),
+      transform 0.45s var(--ease-out),
+      visibility 0s linear 0.45s;
+  }
+  .hdr.on-dark .hdr-pill {
+    border-color: transparent;
+    box-shadow: 0 12px 40px -18px rgba(0, 0, 0, 0.5);
+  }
+
+  @media (max-width: 1239px) {
+    .hdr-full__nav,
+    .hdr-full__wa {
+      display: none;
+    }
+    .hdr-full .hdr__menu-btn {
+      display: inline-flex;
+    }
+  }
+
+  /* Mobile: barra fixa simples */
+  @media (max-width: 899px) {
+    .hdr-full {
+      background: color-mix(in srgb, var(--c-bg) 94%, transparent);
+      backdrop-filter: saturate(1.2) blur(10px);
+      -webkit-backdrop-filter: saturate(1.2) blur(10px);
+      transition: box-shadow 0.3s;
+    }
+    .hdr.is-scrolled .hdr-full {
+      box-shadow: 0 1px 0 var(--c-line);
+    }
+    .hdr-full__inner {
+      height: 64px;
+      padding: 0 12px 0 20px;
+    }
+    .hdr-full__cta {
+      display: none;
+    }
+    .hdr-pill {
+      display: none;
+    }
+    .hdr.is-compact .hdr-full {
+      opacity: 1;
+      transform: none;
+      visibility: visible;
+    }
+    .hdr-full__inner :global(.wordmark__desc) {
+      display: none;
+    }
+    .hdr-full__inner :global(.wordmark) {
+      gap: 8px;
+    }
+    .hdr-full__inner :global(.wordmark__arch) {
+      width: 16px;
+      height: 20px;
+    }
+    .hdr-full__inner :global(.wordmark__name) {
+      font-size: 28px;
+    }
+  }
+
+  /* Diálogo do menu */
+  .menu {
+    position: fixed;
+    inset: 0;
+    width: 100%;
+    max-width: none;
+    height: 100%;
+    max-height: none;
+    margin: 0;
+    padding: 0 12px 0 20px;
+    border: 0;
+    background: var(--c-bg);
+    color: var(--c-ink);
+    display: none;
+    flex-direction: column;
+    overflow-y: auto;
+  }
+  .menu[open] {
+    display: flex;
+    animation: menu-in 0.45s var(--ease-out);
+  }
+  .menu::backdrop {
+    background: rgba(31, 23, 25, 0.2);
+  }
+  @keyframes menu-in {
+    from {
+      opacity: 0;
+      transform: translateY(-12px);
+    }
+  }
+  .menu__top {
+    height: 64px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .menu__top a {
+    color: var(--c-ink);
+    text-decoration: none;
+  }
+  .menu .hdr__menu-btn {
+    display: inline-flex;
+  }
+  .menu__nav ul {
+    margin: 24px 8px 0 0;
+    padding: 0;
+    border-top: 1px solid var(--c-line);
+  }
+  .menu__nav li {
+    border-bottom: 1px solid var(--c-line);
+    animation: menu-item 0.5s var(--ease-out) both;
+    animation-delay: calc(var(--i) * 45ms + 80ms);
+  }
+  @keyframes menu-item {
+    from {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+  }
+  .menu__nav a {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    min-height: 60px;
+    font-family: var(--f-serif);
+    font-size: 30px;
+    color: var(--c-ink);
+    text-decoration: none;
+  }
+  .menu__nav a[aria-current='true'] {
+    color: var(--c-primary);
+  }
+  .menu__actions {
+    margin: auto 8px 0 0;
+    padding: 32px 0 calc(28px + env(safe-area-inset-bottom, 0px));
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .menu__tel {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    min-height: 44px;
+    color: var(--c-ink);
+    text-decoration: none;
+    font-size: 15px;
+  }
+  @media (min-width: 900px) {
+    .menu {
+      padding-inline: var(--gutter);
+    }
+    .menu__nav a {
+      font-size: 40px;
+      min-height: 76px;
+    }
+    .menu__actions {
+      flex-direction: row;
+      max-width: 720px;
+    }
+  }
+</style>

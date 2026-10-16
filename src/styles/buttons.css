@@ -1,0 +1,113 @@
+/* Botões em pílula (variações dos artboards). Globais: usados também como classes. */
+  .btn {
+    --btn-h: 44px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    height: var(--btn-h);
+    min-height: 44px;
+    padding: 0 22px;
+    border-radius: var(--r-pill);
+    border: 1px solid transparent;
+    font-family: var(--f-sans);
+    font-size: 14px;
+    font-weight: 500;
+    line-height: 1;
+    text-decoration: none;
+    white-space: nowrap;
+    transition:
+      background-color 0.25s var(--ease-out),
+      color 0.25s var(--ease-out),
+      border-color 0.25s var(--ease-out),
+      transform 0.25s var(--ease-out),
+      box-shadow 0.25s var(--ease-out);
+  }
+  .btn:active {
+    transform: translateY(1px);
+  }
+  .btn .icon {
+    transition: transform 0.3s var(--ease-out);
+  }
+  .btn:hover .icon-shift {
+    transform: translateX(3px);
+  }
+  .btn--sm {
+    --btn-h: 44px;
+    padding: 0 20px;
+    font-size: 13px;
+  }
+  .btn--lg {
+    --btn-h: 56px;
+    padding: 0 28px;
+    font-size: 15px;
+    gap: 12px;
+  }
+  .btn--xl {
+    --btn-h: 62px;
+    padding: 0 26px;
+    font-size: 16px;
+  }
+  .btn--block {
+    width: 100%;
+  }
+  .btn--primary {
+    background: var(--c-primary);
+    color: #fff;
+  }
+  .btn--primary:hover {
+    background: var(--c-primary-hover);
+    color: #fff;
+  }
+  .btn--outline {
+    border-color: var(--c-line-strong);
+    color: var(--c-ink);
+    background: transparent;
+  }
+  .btn--outline:hover {
+    border-color: var(--c-ink);
+    color: var(--c-ink);
+  }
+  .btn--light {
+    background: var(--c-on-primary);
+    color: var(--c-primary);
+    font-weight: 600;
+  }
+  .btn--light:hover {
+    background: #fff;
+    color: var(--c-primary-hover);
+  }
+  .btn--ghost-light {
+    border-color: rgba(247, 237, 234, 0.45);
+    color: var(--c-on-primary-2);
+  }
+  .btn--ghost-light:hover {
+    border-color: var(--c-on-primary);
+    color: #fff;
+  }
+  .btn--dark {
+    background: var(--c-ink);
+    color: #fff;
+  }
+  .btn--dark:hover {
+    background: #000;
+    color: #fff;
+  }
+  .btn--float {
+    height: 54px;
+    padding: 0 22px 0 18px;
+    background: var(--c-surface);
+    color: var(--c-primary);
+    border-color: var(--c-line);
+    box-shadow: var(--shadow-float);
+    font-weight: 600;
+  }
+  .btn--float:hover {
+    color: var(--c-primary-hover);
+    box-shadow: 0 14px 34px -12px rgba(62, 13, 24, 0.45);
+  }
+  .btn[aria-disabled='true'],
+  .btn:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+  }

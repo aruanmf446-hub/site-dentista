@@ -1,0 +1,99 @@
+---
+/**
+ * Dente separado em três camadas (artboard MobileTratamentos). A camada
+ * ativa (data-layer no contêiner) fica em destaque; as outras esmaecem.
+ * Fallback estático das abas quando não há WebGL.
+ */
+interface Props {
+  id: string;
+  class?: string;
+}
+const { id, class: cls } = Astro.props;
+const P =
+  'M70 150 C60 90 110 60 150 80 C175 92 185 70 200 68 C215 70 225 92 250 80 C290 60 340 90 330 150 C325 200 320 240 312 270 C305 330 300 400 280 470 C272 495 245 495 240 465 C232 410 222 350 200 340 C178 350 168 410 160 465 C155 495 128 495 120 470 C100 400 95 330 88 270 C80 240 75 200 70 150 Z';
+---
+
+<div class:list={['tooth-layers', cls]} data-layers-svg data-layer="esmalte" aria-hidden="true">
+  <span class="tooth-layers__shadow" />
+  <svg viewBox="40 0 340 580" preserveAspectRatio="xMidYMid meet">
+    <defs>
+      <radialGradient id={`${id}-porc`} cx="36%" cy="28%" r="80%">
+        <stop offset="0" stop-color="#FFFFFF" />
+        <stop offset="0.3" stop-color="#F7F0ED" />
+        <stop offset="0.6" stop-color="#DECCC8" />
+        <stop offset="1" stop-color="#A9898A" />
+      </radialGradient>
+      <clipPath id={`${id}-cCrown`}><rect x="0" y="0" width="400" height="190" /></clipPath>
+      <clipPath id={`${id}-cMid`}><rect x="0" y="190" width="400" height="110" /></clipPath>
+      <clipPath id={`${id}-cRoot`}><rect x="0" y="300" width="400" height="260" /></clipPath>
+      <filter id={`${id}-soft`}><feGaussianBlur stdDeviation="7" /></filter>
+    </defs>
+    <g class="tl tl--raiz">
+      <g clip-path={`url(#${id}-cRoot)`}><path d={P} fill={`url(#${id}-porc)`} /></g>
+      <ellipse cx="199" cy="300" rx="107" ry="17" fill="#EBDAD3" />
+    </g>
+    <g class="tl tl--dentina-polpa">
+      <g clip-path={`url(#${id}-cMid)`}><path d={P} fill={`url(#${id}-porc)`} /></g>
+      <ellipse cx="200" cy="190" rx="126" ry="21" fill="#EBDAD3" />
+      <ellipse cx="200" cy="191" rx="42" ry="7" fill="#B65E6B" />
+    </g>
+    <g class="tl tl--esmalte">
+      <g clip-path={`url(#${id}-cCrown)`}>
+        <path d={P} fill={`url(#${id}-porc)`} />
+        <ellipse cx="136" cy="150" rx="26" ry="38" fill="#FFFFFF" opacity="0.7" filter={`url(#${id}-soft)`} />
+      </g>
+    </g>
+  </svg>
+</div>
+
+<style>
+  .tooth-layers {
+    position: relative;
+  }
+  .tooth-layers svg {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    overflow: visible;
+  }
+  .tooth-layers__shadow {
+    position: absolute;
+    left: 9%;
+    top: 98%;
+    width: 82%;
+    height: 7%;
+    border-radius: 50%;
+    background: var(--c-primary-dark);
+    filter: blur(10px);
+  }
+  .tl {
+    transition:
+      transform 0.6s var(--ease-out),
+      opacity 0.5s var(--ease-out);
+    transform-box: view-box;
+  }
+  .tl--raiz {
+    transform: translateY(60px);
+  }
+  .tl--dentina-polpa {
+    transform: translateY(10px);
+  }
+  .tl--esmalte {
+    transform: translateY(-40px);
+  }
+  [data-layer='esmalte'] .tl:not(.tl--esmalte),
+  [data-layer='dentina-polpa'] .tl:not(.tl--dentina-polpa),
+  [data-layer='raiz'] .tl:not(.tl--raiz) {
+    opacity: 0.4;
+  }
+  [data-layer='esmalte'] .tl--esmalte {
+    transform: translateY(-58px);
+  }
+  [data-layer='dentina-polpa'] .tl--dentina-polpa {
+    transform: translateY(4px) scale(1.02);
+  }
+  [data-layer='raiz'] .tl--raiz {
+    transform: translateY(76px);
+  }
+</style>

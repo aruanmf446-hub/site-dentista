@@ -1,0 +1,332 @@
+---
+/**
+ * 02 · Especialidades — "o dente vira arcada". Lista à esquerda (clique)
+ * + progressão pela rolagem no modo cinema. Funciona com 1..N especialidades.
+ * O destaque na arcada é ilustrativo e não representa diagnóstico.
+ */
+import site from '@/lib/site';
+import Eyebrow from '@/components/ui/Eyebrow.astro';
+import Title from '@/components/ui/Title.astro';
+import Icon from '@/components/ui/Icon.astro';
+import ArcadeCss from './svg/ArcadeCss.astro';
+import { dentesDestacados } from '@/lib/arcade';
+
+const { c, numeroDe } = site;
+const specs = c.especialidades;
+const total = String(specs.length).padStart(2, '0');
+const linkPara = (s: (typeof specs)[number]) => {
+  const prof = s.profissionais.map((p) => c.equipe.find((e) => e.slug === p)).filter(Boolean);
+  const comPagina = prof.find((p) => p!.pagina && p!.bio.length);
+  if (comPagina) return { href: `/equipe/${comPagina.slug}/`, rotulo: `Conheça ${comPagina.nome}` };
+  if (prof.length && site.ativo('equipe')) return { href: '/#equipe', rotulo: 'Conheça os especialistas' };
+  const trat = c.tratamentos.find((t) => t.especialidade === s.slug);
+  if (trat) return { href: `/tratamentos/${trat.slug}/`, rotulo: `Saiba mais sobre ${trat.nome.toLowerCase()}` };
+  return { href: '/#agendamento', rotulo: 'Agendar avaliação' };
+};
+const presets = specs.map((s) => ({ dentes: dentesDestacados(s.destaque.dentes), efeito: s.destaque.efeito }));
+---
+
+<section
+  id="especialidades"
+  class="panel esp"
+  data-panel="especialidades"
+  data-surface="light"
+  aria-labelledby="esp-title"
+  data-count={specs.length}
+  data-especialidades
+>
+  <script type="application/json" data-esp-presets set:html={JSON.stringify(presets)} />
+  <div class="esp__inner">
+    <div class="esp__copy" data-cine="esp-copy">
+      <Eyebrow numero={numeroDe('especialidades')} texto="Especialidades" />
+      <Title id="esp-title" class="esp__title" text={c.especialidadesSecao.titulo} />
+      <ul role="list" class="esp__list" style={`--n:${specs.length}`} data-cine="esp-list">
+        {
+          specs.map((s, i) => (
+            <li>
+              <button
+                type="button"
+                class="esp__item"
+                data-spec-index={i}
+                aria-pressed={i === 0 ? 'true' : 'false'}
+                aria-controls="esp-detalhe"
+              >
+                <span class="esp__num">{String(i + 1).padStart(2, '0')}</span>
+                <span class="esp__name">{s.nome}</span>
+                <Icon name="arrow-right" class="esp__arrow" />
+              </button>
+            </li>
+          ))
+        }
+      </ul>
+    </div>
+
+    <div class="esp__visual">
+      <div class="esp__arcade" data-anchor="arcada">
+        <ArcadeCss class="view-fallback" />
+        <canvas class="view-canvas" data-view="especialidades" aria-hidden="true" />
+      </div>
+      <div class="esp__detail" id="esp-detalhe" aria-live="polite" data-cine="esp-detail">
+        {
+          specs.map((s, i) => {
+            const link = linkPara(s);
+            return (
+              <article class="esp__card" data-spec-detail={i} hidden={i !== 0}>
+                <p class="esp__count">
+                  {String(i + 1).padStart(2, '0')} / {total}
+                </p>
+                <h3 class="esp__card-title">{s.nome}</h3>
+                <p class="esp__card-text">{s.descricao}</p>
+                <a href={link.href} class="esp__card-link">
+                  {link.rotulo}
+                  <Icon name="arrow-right" size={16} />
+                </a>
+              </article>
+            );
+          })
+        }
+      </div>
+    </div>
+  </div>
+  <p class="esp__note">Destaques ilustrativos. O diagnóstico e a indicação de tratamento dependem de avaliação clínica.</p>
+</section>
+
+<style>
+  .esp {
+    position: relative;
+    background: var(--c-bg);
+  }
+  .esp__inner {
+    max-width: var(--max);
+    margin-inline: auto;
+    padding: var(--section-gap) var(--gutter);
+    display: grid;
+    grid-template-columns: minmax(0, 470px) minmax(0, 1fr);
+    gap: 24px;
+    align-items: start;
+  }
+  .esp__title {
+    margin-top: 26px;
+    font-family: var(--f-serif);
+    font-size: var(--fs-h2);
+    line-height: 1.02;
+    letter-spacing: -0.01em;
+  }
+  .esp__list {
+    margin: 44px 0 0;
+    padding: 0;
+    width: min(420px, 100%);
+    border-bottom: 1px solid var(--c-line);
+  }
+  .esp__list li {
+    border-top: 1px solid var(--c-line);
+  }
+  .esp__item {
+    width: 100%;
+    min-height: 44px;
+    height: 58px;
+    border: 0;
+    background: transparent;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    font-family: var(--f-serif);
+    font-size: 26px;
+    color: var(--c-ink);
+    text-align: left;
+    transition: color 0.3s var(--ease-out);
+  }
+  .esp__item:hover {
+    color: var(--c-primary);
+  }
+  .esp__num {
+    width: 28px;
+    font-family: var(--f-sans);
+    font-size: 12px;
+    font-variant-numeric: tabular-nums;
+  }
+  .esp__name {
+    flex: 1;
+  }
+  .esp__arrow {
+    opacity: 0;
+    transform: translateX(-8px);
+    transition:
+      opacity 0.3s var(--ease-out),
+      transform 0.4s var(--ease-out);
+  }
+  .esp__item[aria-pressed='true'] {
+    color: var(--c-primary);
+  }
+  .esp__item[aria-pressed='true'] .esp__arrow {
+    opacity: 1;
+    transform: none;
+  }
+  .esp__visual {
+    position: relative;
+    min-height: 520px;
+  }
+  .esp__arcade {
+    position: relative;
+    width: min(800px, 100%);
+    aspect-ratio: 800 / 640;
+    margin-left: auto;
+  }
+  .esp__arcade :global(.view-fallback) {
+    position: absolute;
+    inset: 0;
+  }
+  .esp__detail {
+    position: absolute;
+    left: 50%;
+    top: 56%;
+    width: min(340px, 60%);
+    transform: translateX(-38%);
+    text-align: center;
+  }
+  .esp__card.is-entering {
+    animation: card-in 0.55s var(--ease-out);
+  }
+  @keyframes card-in {
+    from {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+  }
+  html:not(.js) .esp__card[hidden] {
+    display: block;
+    margin-top: 24px;
+  }
+  .esp__count {
+    font-size: 11px;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: var(--c-muted);
+  }
+  .esp__card-title {
+    margin-top: 10px;
+    font-family: var(--f-serif);
+    font-style: italic;
+    font-size: clamp(32px, 2.2vw + 10px, 40px);
+    line-height: 1.05;
+    color: var(--c-primary);
+  }
+  .esp__card-text {
+    margin: 12px auto 0;
+    max-width: 300px;
+    font-size: 15px;
+    line-height: 1.55;
+    color: var(--c-text);
+  }
+  .esp__card-link {
+    margin-top: 14px;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 44px;
+    font-size: 14px;
+    font-weight: 600;
+    text-decoration: none;
+  }
+  .esp__note {
+    max-width: var(--max);
+    margin: -48px auto 0;
+    padding: 0 var(--gutter) 32px;
+    font-size: 12px;
+    color: var(--c-muted);
+    text-align: right;
+  }
+
+  @media (max-width: 899px) {
+    .esp__inner {
+      padding: 72px 20px 48px;
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+    }
+    .esp__title {
+      margin-top: 14px;
+      font-size: 36px;
+    }
+    .esp__list {
+      margin-top: 28px;
+      width: 100%;
+    }
+    .esp__item {
+      height: 54px;
+      font-size: 23px;
+    }
+    .esp__copy {
+      display: contents;
+    }
+    .esp__copy :global(.eyebrow),
+    .esp__title {
+      order: -3;
+    }
+    .esp__visual {
+      order: -2;
+      min-height: 0;
+      margin: 8px 0 0;
+    }
+    .esp__arcade {
+      width: 100%;
+      margin: 0;
+    }
+    .esp__detail {
+      position: relative;
+      left: auto;
+      top: auto;
+      width: auto;
+      transform: none;
+      margin-top: -18%;
+      padding: 0 20px;
+    }
+    .esp__note {
+      margin-top: 0;
+      padding: 0 20px 40px;
+      text-align: left;
+    }
+  }
+
+  /* Modo cinema: painel fixo, lista + arcada lado a lado */
+  :global(html.is-cinema) .esp {
+    background: transparent;
+  }
+  :global(html.is-cinema) .esp__inner {
+    position: absolute;
+    inset: 0;
+    padding: clamp(110px, 18.9vh, 170px) var(--gutter) 0;
+    max-width: none;
+  }
+  :global(html.is-cinema) .esp__item {
+    height: clamp(44px, calc((100vh - 470px) / var(--n)), 58px);
+    font-size: clamp(20px, calc((100vh - 470px) / var(--n) * 0.45), 26px);
+  }
+  :global(html.is-cinema) .esp__visual {
+    position: absolute;
+    left: 38.9vw;
+    top: 15.5vh;
+    width: 55.6vw;
+    height: 71vh;
+  }
+  :global(html.is-cinema) .esp__arcade {
+    position: absolute;
+    inset: 0;
+    width: auto;
+    aspect-ratio: auto;
+  }
+  :global(html.is-cinema) .esp__detail {
+    left: 50%;
+    top: 56%;
+    width: 340px;
+    transform: translateX(-50%);
+  }
+  :global(html.is-cinema) .esp__note {
+    position: absolute;
+    right: calc(var(--gutter) + 160px);
+    bottom: 28px;
+    margin: 0;
+    padding: 0;
+  }
+</style>

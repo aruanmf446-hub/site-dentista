@@ -1,0 +1,37 @@
+---
+/**
+ * Título editorial. "*trecho*" vira itálico na cor primária; "\n" vira quebra
+ * de linha apenas em telas largas (como no hero do design).
+ */
+import { splitDestaque } from '@/lib/site';
+
+interface Props {
+  text: string;
+  as?: 'h1' | 'h2' | 'h3' | 'p' | 'div';
+  class?: string;
+  id?: string;
+  [key: `data-${string}`]: string | undefined;
+}
+const { text, as: Tag = 'h2', class: cls, id, ...rest } = Astro.props;
+const linhas = text.split('\n');
+---
+
+<Tag class={cls} id={id} {...rest}>
+  {
+    linhas.map((linha, i) => (
+      <>
+        {i > 0 && <br class="br-wide" />}
+        {i > 0 && ' '}
+        {splitDestaque(linha).map((p) => (p.destaque ? <em class="destaque">{p.texto}</em> : p.texto))}
+      </>
+    ))
+  }
+</Tag>
+
+<style is:global>
+  @media (max-width: 899px) {
+    .br-wide {
+      display: none;
+    }
+  }
+</style>

@@ -1,0 +1,605 @@
+---
+/**
+ * 01 · Tratamentos — storyboard A → B → C (desktop, modo cinema) e
+ * abas por camada (mobile / movimento reduzido / sem WebGL).
+ * A lista aceita qualquer quantidade de tratamentos: 1–2 em destaque,
+ * 3–5 em uma coluna, 6+ em duas; acima de 12 a home mostra 12 e um link.
+ */
+import site from '@/lib/site';
+import Eyebrow from '@/components/ui/Eyebrow.astro';
+import Title from '@/components/ui/Title.astro';
+import Icon from '@/components/ui/Icon.astro';
+import ToothCutSvg from './svg/ToothCutSvg.astro';
+import ToothLayersSvg from './svg/ToothLayersSvg.astro';
+import { CAMADAS, LEGENDAS } from '@/data/anatomia';
+
+const { c, numeroDe } = site;
+const sec = c.tratamentosSecao;
+const MAX_HOME = 12;
+const todos = site.tratamentosHome.length ? site.tratamentosHome : c.tratamentos;
+const itens = todos.slice(0, MAX_HOME);
+const n = itens.length;
+const cols = n > 5 ? 2 : 1;
+const densidade = n <= 2 ? 'poucos' : n <= 5 ? 'medio' : 'muitos';
+const restantes = c.tratamentos.length - itens.length;
+const numero = numeroDe('tratamentos');
+const porCamada = CAMADAS.map((cam) => ({
+  ...cam,
+  itens: c.tratamentos.filter((t) => t.camadas.includes(cam.id)),
+}));
+const temAssociacao = porCamada.some((p) => p.itens.length > 0);
+---
+
+<section
+  id="tratamentos"
+  class="panel trat on-primary"
+  data-panel="tratamentos"
+  data-surface="dark"
+  aria-labelledby="trat-title"
+  data-count={n}
+>
+  <div class="trat__bg" aria-hidden="true"></div>
+
+  <!-- Quadro A -->
+  <div class="trat__a cine-only" data-cine="trat-a">
+    <Eyebrow numero={numero} texto="Tratamentos" tone="dark" />
+    <Title as="p" class="trat__a-title" text={sec.tituloAbertura} />
+  </div>
+  <div class="trat__hint cine-only" aria-hidden="true" data-cine="trat-hint">Role para abrir<span /></div>
+
+  <!-- Quadro B -->
+  <div class="trat__b cine-only" data-cine="trat-b">
+    <Eyebrow numero={numero} texto="Tratamentos" tone="dark" />
+    <Title as="h3" class="trat__b-title" text={sec.tituloAnatomia} />
+    <p class="trat__b-text">{sec.textoAnatomia}</p>
+  </div>
+  <ul class="trat__labels cine-only" role="list" aria-label="Estruturas do dente" data-cine="trat-labels">
+    {
+      LEGENDAS.map((l) => (
+        <li class="trat__label" data-label={l.id}>
+          <span class="trat__label-name">{l.nome}</span>
+          <span class="trat__label-text">{l.texto}</span>
+        </li>
+      ))
+    }
+  </ul>
+
+  <!-- Âncoras de composição da cena 3D (medidas em tempo real) -->
+  <div class="trat__anchors cine-only" aria-hidden="true">
+    <span data-anchor="trat-a"></span>
+    <span data-anchor="trat-b"></span>
+    <span data-anchor="trat-c"></span>
+  </div>
+
+  <!-- Quadro C / conteúdo principal -->
+  <div class="trat__c" data-cine="trat-c">
+    <div class="trat__c-head">
+      <Eyebrow numero={numero} texto="Tratamentos" tone="dark" class="trat__eyebrow" />
+      <h2 id="trat-title" class="trat__c-title">
+        <span class="only-wide"><Title as="div" class="contents" text={sec.tituloLista} /></span>
+        <span class="only-narrow"><Title as="div" class="contents" text={sec.tituloMobile} /></span>
+      </h2>
+    </div>
+
+    <div class="trat__visual stack-only">
+      <div class="trat__tooth" data-anchor="trat-stack">
+        <ToothCutSvg id="trat-cut" class="view-fallback trat__cut-svg" />
+        <ToothLayersSvg id="trat-layers" class="view-fallback trat__layers-svg" />
+        <canvas class="view-canvas" data-view="tratamentos" aria-hidden="true" />
+      </div>
+    </div>
+
+    <div class="trat__tabs stack-only" data-tabs data-layer-tabs>
+      <div role="tablist" aria-label="Camadas do dente" class="trat__tablist">
+        {
+          porCamada.map((cam, i) => (
+            <button
+              type="button"
+              role="tab"
+              id={`tab-${cam.id}`}
+              aria-controls={`painel-${cam.id}`}
+              aria-selected={i === 0 ? 'true' : 'false'}
+              data-tab={cam.id}
+              class="trat__tab"
+            >
+              {cam.nome}
+            </button>
+          ))
+        }
+      </div>
+      {
+        porCamada.map((cam) => (
+          <div role="tabpanel" id={`painel-${cam.id}`} aria-labelledby={`tab-${cam.id}`} class="trat__panel" tabindex="0">
+            <p class="trat__panel-text">{cam.texto}</p>
+            {cam.itens.length > 0 && (
+              <>
+                <p class="trat__panel-rel">Cuidados relacionados</p>
+                <ul role="list" class="trat__rows">
+                  {cam.itens.map((t) => (
+                    <li>
+                      <a href={`/tratamentos/${t.slug}/`}>
+                        {t.nome}
+                        <Icon name="arrow-right" size={16} />
+                      </a>
+                    </li>
+                  ))}
+                </ul>
+              </>
+            )}
+          </div>
+        ))
+      }
+    </div>
+
+    <ul
+      role="list"
+      class:list={['trat__list', `trat__list--${densidade}`, { 'trat__list--secondary': temAssociacao }]}
+      data-cols={cols}
+      style={`--rows:${Math.ceil(n / cols)}`}
+      data-cine="trat-list"
+    >
+      {
+        itens.map((t, i) => (
+          <li data-item={i}>
+            <a href={`/tratamentos/${t.slug}/`}>
+              <span class="trat__num">{String(i + 1).padStart(2, '0')}</span>
+              <span class="trat__name">{t.nome}</span>
+              <Icon name="arrow-right" size={16} />
+            </a>
+          </li>
+        ))
+      }
+    </ul>
+
+    <div class="trat__ctas" data-cine="trat-cta">
+      <a href="/#agendamento" class="btn btn--light btn--lg">Agendar avaliação</a>
+      <a href="/tratamentos/" class="trat__all">
+        {restantes > 0 ? `Ver todos os ${c.tratamentos.length} tratamentos` : 'Ver todos os tratamentos'}
+      </a>
+    </div>
+  </div>
+</section>
+
+<style>
+  .trat {
+    position: relative;
+    color: var(--c-on-primary-2);
+    isolation: isolate;
+  }
+  .trat a {
+    color: inherit;
+  }
+  .trat__bg {
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    background: var(--c-primary);
+  }
+  .only-narrow {
+    display: none;
+  }
+  :global(.contents) {
+    display: contents;
+  }
+  .trat__c-title {
+    margin-top: 22px;
+    font-family: var(--f-serif);
+    font-size: clamp(2.25rem, 1.4rem + 2.2vw, 3.5rem);
+    line-height: 1.02;
+    color: var(--c-on-primary);
+  }
+  .trat__list {
+    list-style: none;
+    margin: 36px 0 0;
+    padding: 0;
+    display: grid;
+    column-gap: 40px;
+    border-top: 1px solid var(--c-on-primary-line);
+  }
+  .trat__list[data-cols='2'] {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-auto-flow: column;
+    grid-template-rows: repeat(var(--rows), auto);
+  }
+  .trat__list li {
+    border-bottom: 1px solid var(--c-on-primary-line);
+  }
+  .trat__list a {
+    min-height: 56px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    text-decoration: none;
+  }
+  .trat__list a:hover .trat__name {
+    color: #fff;
+  }
+  .trat__list a :global(.icon) {
+    transition: transform 0.3s var(--ease-out);
+  }
+  .trat__list a:hover :global(.icon) {
+    transform: translateX(4px);
+  }
+  .trat__num {
+    width: 22px;
+    font-size: 11px;
+    color: var(--c-on-primary-soft);
+    font-variant-numeric: tabular-nums;
+  }
+  .trat__name {
+    flex: 1;
+    font-family: var(--f-serif);
+    font-size: 25px;
+    line-height: 1.15;
+    padding: 8px 0;
+    transition: color 0.25s;
+  }
+  .trat__list--poucos a {
+    min-height: 84px;
+  }
+  .trat__list--poucos .trat__name {
+    font-size: clamp(28px, 2.4vw, 36px);
+  }
+  .trat__ctas {
+    margin-top: 36px;
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 16px 28px;
+  }
+  .trat__all {
+    font-size: 15px;
+    text-decoration: none;
+    border-bottom: 1px solid var(--c-on-primary-soft);
+    padding-bottom: 4px;
+  }
+  .trat__all:hover {
+    color: #fff;
+    border-color: #fff;
+  }
+
+  /* ---------- Modo empilhado (mobile, movimento reduzido, sem WebGL) ---------- */
+  html:not(.is-cinema) .cine-only {
+    display: none;
+  }
+  .trat__c {
+    position: relative;
+    max-width: var(--max);
+    margin-inline: auto;
+    padding: var(--section-gap) var(--gutter);
+    display: grid;
+    grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
+    grid-template-areas:
+      'visual head'
+      'visual list'
+      'tabs list'
+      'tabs ctas';
+    grid-template-rows: auto auto 1fr auto;
+    column-gap: clamp(40px, 6vw, 96px);
+  }
+  .trat__c-head {
+    grid-area: head;
+  }
+  .trat__visual {
+    grid-area: visual;
+    display: flex;
+    justify-content: center;
+    align-items: flex-end;
+  }
+  .trat__tabs {
+    grid-area: tabs;
+    margin-top: 28px;
+  }
+  .trat__list {
+    grid-area: list;
+  }
+  .trat__ctas {
+    grid-area: ctas;
+  }
+  .trat__tooth {
+    position: relative;
+    width: min(320px, 70%);
+    aspect-ratio: 400 / 700;
+  }
+  .trat__tooth :global(.view-fallback) {
+    position: absolute;
+    inset: 0;
+  }
+  .trat__layers-svg {
+    display: none;
+  }
+  .trat__tablist {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 8px;
+  }
+  .trat__tab {
+    min-height: 44px;
+    padding: 0 16px;
+    border-radius: var(--r-pill);
+    border: 1px solid rgba(247, 237, 234, 0.4);
+    background: transparent;
+    color: var(--c-on-primary-2);
+    font-size: 13px;
+    transition:
+      background-color 0.3s var(--ease-out),
+      color 0.3s,
+      border-color 0.3s;
+  }
+  .trat__tab[aria-selected='true'] {
+    background: var(--c-on-primary);
+    border-color: var(--c-on-primary);
+    color: var(--c-primary);
+    font-weight: 600;
+  }
+  .trat__panel {
+    margin-top: 18px;
+    text-align: center;
+  }
+  .trat__panel:focus-visible {
+    outline-offset: 6px;
+  }
+  .trat__panel.is-entering {
+    animation: panel-in 0.5s var(--ease-out);
+  }
+  @keyframes panel-in {
+    from {
+      opacity: 0;
+      transform: translateY(8px);
+    }
+  }
+  .tabs-ready .trat__panel[hidden] {
+    display: none;
+  }
+  html:not(.js) .trat__panel + .trat__panel {
+    margin-top: 28px;
+  }
+  .trat__panel-text {
+    font-size: 15px;
+    line-height: 1.55;
+    color: var(--c-on-primary-muted);
+    max-width: 34ch;
+    margin-inline: auto;
+  }
+  .trat__panel-rel {
+    margin-top: 18px;
+    font-size: 11px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--c-on-primary-soft);
+  }
+  .trat__rows {
+    margin: 10px 0 0;
+    padding: 0;
+    border-top: 1px solid var(--c-on-primary-line);
+    text-align: left;
+  }
+  .trat__rows li {
+    border-bottom: 1px solid var(--c-on-primary-line);
+  }
+  .trat__rows a {
+    min-height: 50px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-family: var(--f-serif);
+    font-size: 23px;
+    text-decoration: none;
+  }
+
+  @media (max-width: 899px) {
+    .only-wide {
+      display: none;
+    }
+    .only-narrow {
+      display: inline;
+    }
+    .trat {
+      margin-top: 2px;
+    }
+    .trat__bg {
+      border-radius: 50% 50% 0 0 / 70px 70px 0 0;
+    }
+    .trat__c {
+      padding: 52px 20px 64px;
+      display: flex;
+      flex-direction: column;
+      text-align: center;
+    }
+    .trat__c-head :global(.eyebrow) {
+      justify-content: center;
+    }
+    .trat__c-head :global(.eyebrow__rule) {
+      display: none;
+    }
+    .trat__c-title {
+      margin-top: 12px;
+      font-size: 36px;
+    }
+    .trat__visual {
+      margin-top: 28px;
+    }
+    .trat__tooth {
+      width: 170px;
+      aspect-ratio: 340 / 580;
+    }
+    .trat__cut-svg {
+      display: none;
+    }
+    .trat__layers-svg {
+      display: block;
+    }
+    .trat__list {
+      margin-top: 32px;
+      text-align: left;
+    }
+    .trat__list[data-cols='2'] {
+      grid-template-columns: 1fr;
+      grid-auto-flow: row;
+      grid-template-rows: none;
+    }
+    /* com abas associadas, a lista completa fica na página de tratamentos */
+    .trat__list--secondary {
+      display: none;
+    }
+    .trat__name {
+      font-size: 23px;
+    }
+    .trat__list a {
+      min-height: 52px;
+    }
+    .trat__ctas {
+      justify-content: center;
+    }
+  }
+
+  /* ---------- Modo cinema: quadros sobrepostos no palco fixo ---------- */
+  :global(html.is-cinema) .stack-only {
+    display: none;
+  }
+  :global(html.is-cinema) .trat__bg {
+    display: none;
+  }
+  :global(html.is-cinema) .trat__a {
+    position: absolute;
+    left: var(--gutter);
+    top: 66.6%;
+    width: min(560px, 42vw);
+  }
+  :global(html.is-cinema) .trat__a-title {
+    margin-top: 22px;
+    font-family: var(--f-serif);
+    font-size: clamp(2.75rem, 1.6rem + 2.6vw, 3.75rem);
+    line-height: 1;
+    letter-spacing: -0.01em;
+    color: var(--c-on-primary);
+  }
+  :global(html.is-cinema) .trat__a-title :global(em) {
+    color: inherit;
+  }
+  .trat__hint {
+    position: absolute;
+    left: 69.4%;
+    top: 84.4%;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 11px;
+    letter-spacing: 0.24em;
+    text-transform: uppercase;
+    color: var(--c-on-primary-muted);
+    white-space: nowrap;
+  }
+  .trat__hint span {
+    display: block;
+    width: 40px;
+    height: 1px;
+    background: currentColor;
+  }
+  :global(html.is-cinema) .trat__b {
+    position: absolute;
+    left: var(--gutter);
+    top: 50%;
+    transform: translateY(-62%);
+    width: min(440px, 32vw);
+  }
+  .trat__b-title {
+    margin-top: 22px;
+    font-family: var(--f-serif);
+    font-size: clamp(2.5rem, 1.7rem + 1.9vw, 3.25rem);
+    line-height: 1.02;
+    color: var(--c-on-primary);
+  }
+  .trat__b-title :global(em) {
+    color: inherit;
+  }
+  .trat__b-text {
+    margin-top: 20px;
+    max-width: 380px;
+    font-size: 16px;
+    line-height: 1.6;
+    color: var(--c-on-primary-muted);
+  }
+  :global(html.is-cinema) .trat__labels {
+    position: absolute;
+    inset: 0;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    pointer-events: none;
+  }
+  .trat__label {
+    position: absolute;
+    left: calc(70.1vw);
+    top: 0;
+    width: 250px;
+    will-change: transform, opacity;
+  }
+  .trat__label-name {
+    display: block;
+    font-size: 11px;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: var(--c-on-primary);
+  }
+  .trat__label-text {
+    display: block;
+    margin-top: 4px;
+    font-size: 14px;
+    line-height: 1.4;
+    color: var(--c-on-primary-muted);
+  }
+  :global(html.is-cinema) .trat__anchors span {
+    position: absolute;
+  }
+  /* A: centro; B: ligeiramente à direita do centro; C: terço esquerdo */
+  [data-anchor='trat-a'] {
+    left: 36.8%;
+    top: 18.4%;
+    width: 26.4%;
+    height: 59%;
+  }
+  [data-anchor='trat-b'] {
+    left: 46%;
+    top: 14%;
+    width: 22%;
+    height: 66%;
+  }
+  [data-anchor='trat-c'] {
+    left: 14.6%;
+    top: 22%;
+    width: 22.2%;
+    height: 55%;
+  }
+  :global(html.is-cinema) .trat__c {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 96px var(--gutter-r) 72px 48.6vw;
+    max-width: none;
+  }
+  :global(html.is-cinema) .trat__c-title {
+    font-size: clamp(2.5rem, 1.6rem + 2.1vw, 3.5rem);
+  }
+  :global(html.is-cinema) .trat__list a {
+    min-height: min(56px, calc((100vh - 470px) / var(--rows)));
+  }
+  :global(html.is-cinema) .trat__list--poucos a {
+    min-height: 84px;
+  }
+  @media (max-height: 760px) {
+    :global(html.is-cinema) .trat__name {
+      font-size: 21px;
+      padding: 4px 0;
+    }
+    :global(html.is-cinema) .trat__list {
+      margin-top: 24px;
+    }
+    :global(html.is-cinema) .trat__ctas {
+      margin-top: 24px;
+    }
+  }
+</style>

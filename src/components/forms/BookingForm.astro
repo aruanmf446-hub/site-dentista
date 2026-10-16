@@ -1,0 +1,464 @@
+---
+/**
+ * Solicitação de horário → WhatsApp da unidade escolhida.
+ * Coleta só o necessário (nome, unidade, interesse, período) e o
+ * consentimento. Não simula agenda e não confirma horários.
+ */
+import site from '@/lib/site';
+import Icon from '@/components/ui/Icon.astro';
+interface Props {
+  id: string;
+  tratamento?: string | undefined;
+  /** 'arch' = dentro do arco vinho (desktop); 'plain' = fundo claro */
+  variant?: 'arch' | 'plain';
+  titulo?: string;
+}
+const { id, tratamento, variant = 'arch', titulo = 'Solicite seu horário' } = Astro.props;
+const { c, multiUnidade } = site;
+const motivos = tratamento ? [tratamento, ...c.agendamento.motivos.filter((m) => m !== tratamento)] : c.agendamento.motivos;
+---
+
+<div class:list={['bf', `bf--${variant}`]} data-form-wrap>
+  <form class="bf__form" aria-labelledby={`${id}-t`} data-wa-form="full" data-tratamento={tratamento} novalidate>
+    <p id={`${id}-t`} class="bf__title">{titulo}</p>
+
+    <div class="bf__field" data-field="nome">
+      <label for={`${id}-nome`}>Nome</label>
+      <input
+        id={`${id}-nome`}
+        name="nome"
+        type="text"
+        autocomplete="name"
+        placeholder="Seu nome completo"
+        required
+        aria-describedby={`${id}-nome-err`}
+        maxlength="80"
+      />
+      <p class="bf__err" id={`${id}-nome-err`} data-error-for="nome" hidden></p>
+    </div>
+
+    {
+      multiUnidade && (
+        <fieldset class="bf__field bf__units" data-field="unidade" aria-describedby={`${id}-un-err`}>
+          <legend>Unidade</legend>
+          <div class="bf__unit-list">
+            {c.unidades.map((u, i) => (
+              <label class="bf__unit">
+                <input type="radio" name="unidade" value={u.id} checked={i === 0} required />
+                <span class="bf__unit-name">{u.nomeCurto ?? u.nome}</span>
+                <span class="bf__unit-hint">{u.endereco.bairro}</span>
+              </label>
+            ))}
+          </div>
+          <p class="bf__err" id={`${id}-un-err`} data-error-for="unidade" hidden />
+        </fieldset>
+      )
+    }
+
+    <div class="bf__field" data-field="motivo">
+      <label for={`${id}-motivo`}>Interesse</label>
+      <select id={`${id}-motivo`} name="motivo">
+        {motivos.map((m) => <option>{m}</option>)}
+      </select>
+    </div>
+
+    <fieldset class="bf__field bf__periods" data-field="periodo">
+      <legend>Período de preferência</legend>
+      <div class="bf__pills">
+        {
+          c.agendamento.periodos.map((p, i) => (
+            <label class="bf__pill">
+              <input type="radio" name="periodo" value={p} checked={i === 0} />
+              <span>{p}</span>
+            </label>
+          ))
+        }
+      </div>
+    </fieldset>
+
+    <div class="bf__field bf__consent" data-field="consentimento">
+      <label class="bf__check">
+        <input type="checkbox" name="consentimento" required aria-describedby={`${id}-cs-err`} />
+        <span>
+          Autorizo o contato da clínica sobre este agendamento, conforme a
+          <a href="/privacidade/">Política de Privacidade</a> (LGPD).
+        </span>
+      </label>
+      <p class="bf__err" id={`${id}-cs-err`} data-error-for="consentimento" hidden></p>
+    </div>
+
+    <button type="submit" class="bf__submit">
+      <Icon name="whatsapp" size={20} />
+      Solicitar pelo WhatsApp
+    </button>
+    <p class="bf__status" data-form-status role="status" aria-live="polite"></p>
+    <p class="bf__fine">Você envia a mensagem pelo seu WhatsApp. A equipe responde para combinar o horário.</p>
+  </form>
+
+  <div class="bf__success" data-form-success hidden>
+    <span class="bf__success-icon" aria-hidden="true"><Icon name="check" size={22} /></span>
+    <p class="bf__success-title" tabindex="-1" data-success-title>Sua mensagem está pronta</p>
+    <p class="bf__success-text">
+      Abrimos o WhatsApp — <strong data-success-dest></strong> — em uma nova aba. Envie a mensagem
+      por lá; o horário ainda <strong>não está confirmado</strong> até a equipe responder.
+    </p>
+    <pre class="bf__preview" data-success-msg></pre>
+    <a href="#" class="bf__submit bf__submit--link" target="_blank" rel="noopener" data-success-link>
+      <Icon name="whatsapp" size={20} />
+      Abrir o WhatsApp novamente
+    </a>
+    <button type="button" class="bf__again" data-form-reset>Editar solicitação</button>
+  </div>
+</div>
+
+<style>
+  .bf {
+    --bf-ink: var(--c-ink);
+    --bf-muted: var(--c-muted);
+    --bf-line: var(--c-line-strong);
+    --bf-ph: #8a7c7f;
+    --bf-err: #a1263a;
+  }
+  .bf--arch {
+    --bf-ink: var(--c-on-primary);
+    --bf-muted: var(--c-on-primary-muted);
+    --bf-line: rgba(247, 237, 234, 0.45);
+    --bf-ph: #cdb3b7;
+    --bf-err: #ffd7dc;
+  }
+  .bf__form {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+    color: var(--bf-ink);
+  }
+  .bf__title {
+    font-family: var(--f-serif);
+    font-size: 32px;
+    line-height: 1.1;
+    text-align: center;
+    color: var(--bf-ink);
+  }
+  .bf__field {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    border: 0;
+    margin: 0;
+    padding: 0;
+    min-width: 0;
+  }
+  .bf__field > label,
+  .bf__field legend {
+    padding: 0;
+    font-size: 11px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--bf-muted);
+  }
+  .bf__field legend {
+    margin-bottom: 8px;
+  }
+  .bf__field input[type='text'],
+  .bf__field select {
+    height: 42px;
+    border: 0;
+    border-bottom: 1px solid var(--bf-line);
+    border-radius: 0;
+    background: transparent;
+    color: var(--bf-ink);
+    font-size: 16px;
+    padding: 0;
+    appearance: none;
+    transition: border-color 0.25s;
+  }
+  .bf__field select {
+    background: transparent
+      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23999' stroke-width='2' stroke-linecap='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E")
+      right 2px center / 12px no-repeat;
+    cursor: pointer;
+  }
+  .bf--arch select option {
+    color: var(--c-ink);
+  }
+  .bf__field input::placeholder {
+    color: var(--bf-ph);
+  }
+  .bf__field input[type='text']:focus-visible,
+  .bf__field select:focus-visible {
+    outline: none;
+    border-bottom-color: var(--bf-ink);
+    box-shadow: 0 1px 0 0 var(--bf-ink);
+  }
+  .bf__field.has-error input[type='text'],
+  .bf__field.has-error select {
+    border-bottom-color: var(--bf-err);
+  }
+  .bf__err {
+    display: flex;
+    gap: 6px;
+    font-size: 13px;
+    color: var(--bf-err);
+    letter-spacing: 0;
+    text-transform: none;
+  }
+  .bf__err::before {
+    content: '!';
+    display: inline-grid;
+    place-items: center;
+    width: 16px;
+    height: 16px;
+    flex: none;
+    border-radius: 50%;
+    border: 1px solid currentColor;
+    font-size: 10px;
+    font-weight: 700;
+    margin-top: 2px;
+  }
+  .bf__unit-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .bf__unit,
+  .bf__pill {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    min-height: 40px;
+    padding: 0 16px;
+    border-radius: var(--r-pill);
+    border: 1px solid var(--bf-line);
+    font-size: 14px;
+    cursor: pointer;
+    transition:
+      background-color 0.25s,
+      color 0.25s,
+      border-color 0.25s;
+  }
+  .bf__unit input,
+  .bf__pill input {
+    position: absolute;
+    opacity: 0;
+    inset: 0;
+    margin: 0;
+    cursor: pointer;
+  }
+  .bf__unit-hint {
+    display: none;
+  }
+  .bf__unit:has(input:checked),
+  .bf__pill:has(input:checked) {
+    background: var(--c-primary);
+    border-color: var(--c-primary);
+    color: #fff;
+    font-weight: 600;
+  }
+  .bf--arch .bf__unit:has(input:checked),
+  .bf--arch .bf__pill:has(input:checked) {
+    background: var(--c-on-primary);
+    border-color: var(--c-on-primary);
+    color: var(--c-primary);
+  }
+  .bf__unit:has(input:focus-visible),
+  .bf__pill:has(input:focus-visible) {
+    outline: 2px solid var(--bf-ink);
+    outline-offset: 2px;
+  }
+  .bf__pills {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+  .bf__check {
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+    font-size: 12px;
+    line-height: 1.5;
+    color: var(--bf-muted);
+    letter-spacing: 0;
+    text-transform: none;
+    cursor: pointer;
+  }
+  .bf__check input {
+    flex: none;
+    width: 18px;
+    height: 18px;
+    margin: 1px 0 0;
+    accent-color: var(--c-primary);
+  }
+  .bf__check a {
+    color: inherit;
+  }
+  .bf__submit {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    height: 56px;
+    border: 0;
+    border-radius: var(--r-pill);
+    background: var(--c-ink);
+    color: #fff;
+    font-size: 15px;
+    font-weight: 600;
+    text-decoration: none;
+    transition: background-color 0.25s;
+  }
+  .bf__submit:hover {
+    background: var(--c-primary);
+    color: #fff;
+  }
+  .bf--arch .bf__submit {
+    background: var(--c-on-primary);
+    color: var(--c-primary);
+  }
+  .bf--arch .bf__submit:hover {
+    background: #fff;
+    color: var(--c-primary-hover);
+  }
+  .bf__status:empty {
+    display: none;
+  }
+  .bf__status {
+    font-size: 13px;
+    color: var(--bf-muted);
+    text-align: center;
+  }
+  .bf__status[data-state='error'] {
+    color: var(--bf-err);
+  }
+  .bf__fine {
+    margin-top: -6px;
+    font-size: 12px;
+    color: var(--bf-muted);
+    text-align: center;
+  }
+  .bf__success {
+    color: var(--bf-ink);
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    align-items: stretch;
+  }
+  .bf__success[hidden] {
+    display: none;
+  }
+  .bf__success-icon {
+    align-self: center;
+    width: 48px;
+    height: 48px;
+    display: grid;
+    place-items: center;
+    border-radius: 50%;
+    border: 1px solid var(--bf-line);
+  }
+  .bf__success-title {
+    font-family: var(--f-serif);
+    font-size: 32px;
+    line-height: 1.1;
+  }
+  .bf__success-title:focus {
+    outline: none;
+  }
+  .bf__success-text {
+    font-size: 14px;
+    line-height: 1.6;
+    color: var(--bf-muted);
+  }
+  .bf__preview {
+    margin: 0;
+    padding: 14px 16px;
+    border-radius: 14px;
+    border: 1px solid var(--bf-line);
+    font-family: var(--f-sans);
+    font-size: 13px;
+    line-height: 1.55;
+    white-space: pre-wrap;
+    text-align: left;
+    color: var(--bf-ink);
+  }
+  .bf__again {
+    min-height: 44px;
+    border: 0;
+    background: transparent;
+    color: var(--bf-ink);
+    text-decoration: underline;
+    text-underline-offset: 4px;
+    font-size: 14px;
+  }
+  @media (max-width: 899px) {
+    .bf--plain .bf__title,
+    .bf--arch .bf__title {
+      display: none;
+    }
+    .bf--arch {
+      --bf-ink: var(--c-ink);
+      --bf-muted: var(--c-muted);
+      --bf-line: var(--c-line-strong);
+      --bf-ph: #8a7c7f;
+      --bf-err: #a1263a;
+    }
+    .bf--arch .bf__submit {
+      background: var(--c-ink);
+      color: #fff;
+    }
+    .bf--arch .bf__unit:has(input:checked),
+    .bf--arch .bf__pill:has(input:checked) {
+      background: var(--c-primary);
+      border-color: var(--c-primary);
+      color: #fff;
+    }
+    /* unidades em lista (artboard MobileAgendar) */
+    .bf__unit-list {
+      flex-direction: column;
+      gap: 0;
+      border-top: 1px solid var(--c-line);
+    }
+    .bf__unit {
+      min-height: 56px;
+      padding: 0 0 0 30px;
+      border: 0;
+      border-bottom: 1px solid var(--c-line);
+      border-radius: 0;
+      gap: 12px;
+    }
+    .bf__unit input {
+      position: absolute;
+      opacity: 1;
+      inset: auto;
+      left: 0;
+      width: 18px;
+      height: 18px;
+      accent-color: var(--c-primary);
+    }
+    .bf__unit:has(input:checked),
+    .bf--arch .bf__unit:has(input:checked) {
+      background: transparent;
+      color: var(--c-ink);
+      font-weight: 400;
+    }
+    .bf__unit-name {
+      flex: 1;
+      font-family: var(--f-serif);
+      font-size: 22px;
+    }
+    .bf__unit-hint {
+      display: inline;
+      font-size: 12px;
+      color: var(--c-muted);
+    }
+    .bf__pills {
+      flex-wrap: nowrap;
+    }
+    .bf__pill {
+      flex: 1;
+      justify-content: center;
+      min-height: 44px;
+      padding: 0 8px;
+    }
+  }
+</style>

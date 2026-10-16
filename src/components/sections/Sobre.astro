@@ -1,0 +1,185 @@
+---
+/** 03 · A clínica — texto, diferenciais e duas fotos em arco sobrepostas. */
+import site from '@/lib/site';
+import Eyebrow from '@/components/ui/Eyebrow.astro';
+import Title from '@/components/ui/Title.astro';
+import ArchPhoto from '@/components/ui/ArchPhoto.astro';
+interface Props {
+  numero?: string | undefined;
+}
+const { numero } = Astro.props;
+const sobre = site.c.sobre!;
+const fotos = sobre.fotos.length ? sobre.fotos : sobre.rotulosFotos.slice(0, 2).map((r) => ({ src: `[Foto real — ${r.toLowerCase()}]`, alt: r, legenda: r }));
+const [f1, f2] = fotos;
+---
+
+<section id="sobre" class="sobre" aria-labelledby="sobre-title" data-section="sobre">
+  <div class="sobre__copy">
+    <Eyebrow numero={numero} texto="A clínica" />
+    <Title id="sobre-title" class="h2 sobre__title" text={sobre.titulo} data-reveal="title" />
+    {sobre.texto.map((p) => <p class="sobre__text" data-reveal="text">{p}</p>)}
+    {
+      sobre.diferenciais.length > 0 && (
+        <ul role="list" class="rule-list sobre__list" data-reveal="rows">
+          {sobre.diferenciais.map((d) => (
+            <li>
+              {d.texto}
+              <span>{d.rotulo}</span>
+            </li>
+          ))}
+        </ul>
+      )
+    }
+  </div>
+  <div class:list={['sobre__photos', { 'sobre__photos--one': !f2 }]}>
+    <span class="sobre__outline" aria-hidden="true" data-reveal="outline"></span>
+    {
+      f1 && (
+        <figure class="sobre__fig sobre__fig--1" data-parallax="-0.06">
+          <ArchPhoto foto={f1} class="sobre__arch sobre__arch--1" sizes="(max-width: 899px) 60vw, 340px" />
+          {f1.legenda && <figcaption>{f1.legenda}</figcaption>}
+        </figure>
+      )
+    }
+    {
+      f2 && (
+        <figure class="sobre__fig sobre__fig--2" data-parallax="0.08">
+          <ArchPhoto foto={f2} class="sobre__arch sobre__arch--2" sizes="(max-width: 899px) 50vw, 290px" />
+          {f2.legenda && <figcaption>{f2.legenda}</figcaption>}
+        </figure>
+      )
+    }
+  </div>
+</section>
+
+<style>
+  .sobre {
+    display: grid;
+    grid-template-columns: minmax(0, 430px) minmax(0, 1fr);
+    gap: clamp(48px, 6.25vw, 90px);
+    align-items: start;
+  }
+  .sobre__copy {
+    padding-top: 40px;
+  }
+  .sobre__title {
+    margin-top: 26px;
+  }
+  .sobre__text {
+    margin-top: 26px;
+    font-size: 17px;
+    line-height: 1.65;
+    color: var(--c-text);
+  }
+  .sobre__list {
+    margin-top: 34px;
+    font-size: 15px;
+  }
+  .sobre__list li {
+    padding: 16px 0;
+    display: flex;
+    justify-content: space-between;
+    gap: 16px;
+  }
+  .sobre__list span {
+    color: var(--c-muted);
+    white-space: nowrap;
+  }
+  .sobre__photos {
+    position: relative;
+    height: 640px;
+  }
+  .sobre__outline {
+    position: absolute;
+    left: -14px;
+    top: -14px;
+    width: 368px;
+    height: 560px;
+    border: 1px solid var(--c-primary);
+    border-bottom: 0;
+    border-radius: 9999px 9999px 0 0;
+    opacity: 0.35;
+  }
+  .sobre__fig {
+    position: absolute;
+    margin: 0;
+  }
+  .sobre__fig--1 {
+    left: 0;
+    top: 0;
+    width: 340px;
+  }
+  .sobre__fig--2 {
+    left: 380px;
+    top: 120px;
+    width: 290px;
+  }
+  .sobre__arch--1 {
+    height: 500px;
+  }
+  .sobre__arch--2 {
+    height: 400px;
+  }
+  .sobre__fig figcaption {
+    margin-top: 14px;
+    font-size: 13px;
+    color: var(--c-muted);
+  }
+  @media (max-width: 1239px) {
+    .sobre__fig--2 {
+      left: 52%;
+      width: 44%;
+    }
+    .sobre__fig--1 {
+      width: 48%;
+    }
+    .sobre__outline {
+      width: calc(48% + 28px);
+      height: auto;
+      aspect-ratio: 368 / 560;
+    }
+    .sobre__arch--1 {
+      height: auto;
+      aspect-ratio: 340 / 500;
+    }
+    .sobre__arch--2 {
+      height: auto;
+      aspect-ratio: 290 / 400;
+    }
+    .sobre__photos {
+      height: auto;
+      aspect-ratio: 670 / 640;
+    }
+  }
+  @media (max-width: 899px) {
+    .sobre {
+      grid-template-columns: 1fr;
+      gap: 40px;
+    }
+    .sobre__copy {
+      padding-top: 0;
+    }
+    .sobre__title {
+      margin-top: 18px;
+    }
+    .sobre__photos {
+      aspect-ratio: 350 / 360;
+    }
+    .sobre__fig--1 {
+      width: 56%;
+    }
+    .sobre__fig--2 {
+      left: 60%;
+      top: 18%;
+      width: 40%;
+    }
+    .sobre__outline {
+      left: -8px;
+      top: -8px;
+      width: calc(56% + 16px);
+    }
+    .sobre__fig figcaption {
+      font-size: 12px;
+    }
+  }
+</style>

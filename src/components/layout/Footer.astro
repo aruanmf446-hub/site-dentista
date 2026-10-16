@@ -1,0 +1,103 @@
+---
+/**
+ * Rodapé do artboard "Agendar": marca, responsável técnico (exigência de
+ * publicidade odontológica), privacidade, redes, razão social e CNPJ.
+ */
+import site from '@/lib/site';
+import Wordmark from '@/components/ui/Wordmark.astro';
+const { legal, contato, marca } = site.c;
+const redes = Object.entries(contato.redes).filter(([, v]) => !!v) as [string, string][];
+const nomesRedes: Record<string, string> = {
+  instagram: 'Instagram',
+  facebook: 'Facebook',
+  youtube: 'YouTube',
+  tiktok: 'TikTok',
+  linkedin: 'LinkedIn',
+};
+const ano = new Date().getFullYear();
+---
+
+<footer class="ftr">
+  <div class="ftr__inner">
+    <a href="/" class="ftr__brand" aria-label={`${marca.nome} — início`}><Wordmark size="sm" /></a>
+    <p>Responsável técnico: {legal.responsavelTecnico.nome} — {legal.responsavelTecnico.cro}</p>
+    <ul role="list" class="ftr__links">
+      <li><a href="/privacidade/">Política de privacidade</a></li>
+      <li><a href="/tratamentos/">Tratamentos</a></li>
+      {site.multiUnidade && site.ativo('unidades') && <li><a href="/unidades/">Unidades</a></li>}
+      {redes.map(([k, v]) => <li><a href={v} rel="noopener" target="_blank">{nomesRedes[k] ?? k}</a></li>)}
+    </ul>
+    <p class="ftr__legal">© {ano} {legal.razaoSocial} · CNPJ {legal.cnpj}</p>
+  </div>
+  {
+    site.demo && (
+      <p class="ftr__demo">
+        Site de demonstração do template. Os dados entre [colchetes] são fictícios e devem ser
+        substituídos por informações reais e revisadas da clínica.
+      </p>
+    )
+  }
+</footer>
+
+<style>
+  .ftr {
+    border-top: 1px solid var(--c-line);
+    background: var(--c-bg);
+    font-size: 12px;
+    color: var(--c-muted);
+    position: relative;
+    z-index: 2;
+  }
+  .ftr__inner {
+    max-width: var(--max);
+    margin-inline: auto;
+    min-height: 56px;
+    padding: 12px calc(var(--gutter) + 124px) 12px var(--gutter);
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px 36px;
+  }
+  .ftr a {
+    color: var(--c-muted);
+  }
+  .ftr a:hover {
+    color: var(--c-ink);
+  }
+  .ftr__brand {
+    color: var(--c-ink);
+    text-decoration: none;
+  }
+  .ftr__links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px 24px;
+    margin: 0;
+    padding: 0;
+  }
+  .ftr__links a {
+    display: inline-flex;
+    align-items: center;
+    min-height: 32px;
+  }
+  .ftr__legal {
+    margin-left: auto;
+  }
+  .ftr__demo {
+    max-width: var(--max);
+    margin: 0 auto;
+    padding: 10px var(--gutter) 14px;
+    border-top: 1px dashed var(--c-line);
+    color: var(--c-muted);
+  }
+  @media (max-width: 899px) {
+    .ftr__inner {
+      padding: 24px 20px;
+      flex-direction: column;
+      align-items: flex-start;
+    }
+    .ftr__legal {
+      margin-left: 0;
+    }
+  }
+</style>
