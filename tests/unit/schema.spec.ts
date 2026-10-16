@@ -9,6 +9,7 @@ import { buildTheme, contrast } from '../../src/lib/theme';
 import { buildMensagem, normalizeNumber } from '../../src/lib/whatsapp';
 import demo from '../../src/clients/alva-demo/clinic';
 import producao from '../fixtures/clients/teste-producao/clinic';
+import modelo from '../../src/clients/_modelo/clinic';
 
 const parse = (x: unknown) => clinicSchema.parse(x);
 
@@ -19,6 +20,13 @@ test.describe('configuração de clientes', () => {
     expect(r.errors).toEqual([]);
     expect(findPlaceholders(c).length).toBeGreaterThan(20);
     expect(c.secoes.valores).toBe(true); // ligado explicitamente na demonstração
+  });
+
+  test('modelo de nova clínica é válido em demonstração e bloqueado em produção', () => {
+    expect(validateClinic(parse(modelo)).errors).toEqual([]);
+    const prod = validateClinic(parse({ ...structuredClone(modelo), site: { ...modelo.site, modo: 'producao' } }));
+    expect(prod.errors.join('\n')).toMatch(/placeholders/);
+    expect(prod.errors.join('\n')).toMatch(/provisória/);
   });
 
   test('módulo Valores vem desligado por padrão', () => {

@@ -97,7 +97,7 @@ export function validateClinic(c: ClinicConfig): ValidationReport {
     if (!c.legal.encarregado?.email) {
       warnings.push('LGPD: informe legal.encarregado.email para a Política de Privacidade.');
     }
-    if (/localhost|example\.com/.test(c.site.url)) errors.push(`site.url parece provisória: ${c.site.url}`);
+    if (/localhost|example\.com|\.exemplo/.test(c.site.url)) errors.push(`site.url parece provisória: ${c.site.url}`);
   } else {
     const ph = findPlaceholders(c);
     if (ph.length) warnings.push(`Modo demonstração: ${ph.length} placeholder(s) identificados como dados fictícios.`);
