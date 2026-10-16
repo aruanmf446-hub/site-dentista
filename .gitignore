@@ -12,3 +12,7 @@ tests/.artifacts/
 .env
 .env.*
 !.env.example
+
+# cópias para download
+site-dentista.zip
+site-dentista.bundle
