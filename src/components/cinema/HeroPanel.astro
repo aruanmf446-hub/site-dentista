@@ -261,4 +261,13 @@ const is3d = hero.visual === '3d';
       width: min(200px, 52vw);
     }
   }
+  /* Modo cinema compacto: o arco termina acima da barra fixa e das barras do navegador */
+  @media (max-width: 899px) {
+    :global(html.is-cinema) .hero {
+      padding-bottom: calc(var(--mobile-bar-h) + var(--cine-ui-bottom));
+    }
+    :global(html.is-cinema) .hero__inner {
+      min-height: 0;
+    }
+  }
 </style>

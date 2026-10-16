@@ -1,7 +1,8 @@
 /**
  * Decide e inicia a experiência da home:
- * - cinema: html.is-cinema (definido antes da pintura no <head>);
- * - empilhado: vistas 3D ancoradas nas seções (mobile, movimento reduzido);
+ * - cinema: html.is-cinema (definido antes da pintura no <head>), em qualquer
+ *   largura; abaixo de 900 px com a composição compacta (html.cine-compact);
+ * - empilhado: vistas 3D paradas nas seções (preferência por movimento reduzido);
  * - sem WebGL: mantém os SVGs do design (fallback estático).
  */
 
@@ -18,7 +19,8 @@ export function webglAvailable(): boolean {
   }
 }
 
-const BREAKPOINT = 900;
+/** Abaixo desta largura o cinema usa a composição compacta (celular/tablet). */
+export const COMPACT_BELOW = 900;
 
 function whenEngaged(timeout: number): Promise<void> {
   return new Promise((resolve) => {
@@ -49,13 +51,16 @@ export async function bootExperience(): Promise<void> {
     window.dispatchEvent(new Event('resize'));
   };
   if (!cinema) {
-    // Mobile/empilhado: o SVG do design já ocupa o lugar do dente; o 3D
-    // começa na primeira interação (ou após alguns segundos ociosos),
-    // sem disputar a thread principal com o carregamento da página.
+    // Empilhado (movimento reduzido): o SVG do design já ocupa o lugar do
+    // dente; as vistas 3D paradas começam na primeira interação (ou após
+    // alguns segundos ociosos), sem disputar a thread com o carregamento.
     await whenEngaged(5000);
   }
-  // no cinema, a criação do próprio renderizador testa o WebGL (sem contexto extra)
-  if (!('WebGLRenderingContext' in window) || (!cinema && !webglAvailable())) {
+  // teste barato antes de montar a sequência (evita mostrar o cinema e desmontar
+  // logo depois); falhas posteriores do WebGL são tratadas dentro do cinema
+  if (!('WebGLRenderingContext' in window) || !webglAvailable()) {
+    console.warn('[cena] WebGL indisponível neste navegador — exibindo as ilustrações estáticas.');
+    html.dataset.webglError = 'WebGL indisponível';
     fallback();
     return;
   }
@@ -69,20 +74,9 @@ export async function bootExperience(): Promise<void> {
       await initStacked();
     }
   } catch (err) {
-    console.warn('[cena] WebGL indisponível, usando ilustrações estáticas.', err);
+    // o cinema desmonta a si mesmo antes de chegar aqui; este é o último recurso
+    console.error('[cena] experiência 3D indisponível — usando ilustrações estáticas.', err);
+    html.dataset.webglError = String((err as Error)?.message ?? err).slice(0, 120);
     fallback();
-    return;
   }
-
-  // Cruzou o ponto de quebra (ex.: tablet girado)? Recarrega no modo certo.
-  const wide = window.innerWidth >= BREAKPOINT;
-  let timer = 0;
-  window.addEventListener('resize', () => {
-    window.clearTimeout(timer);
-    timer = window.setTimeout(() => {
-      const nowWide = window.innerWidth >= BREAKPOINT;
-      const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-      if (nowWide !== wide && !reduced) window.location.reload();
-    }, 300);
-  });
 }

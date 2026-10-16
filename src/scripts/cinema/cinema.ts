@@ -10,6 +10,14 @@
  *   - textos e listas dos painéis (entradas e saídas).
  * Rolar para cima reverte tudo, porque tudo é função do progresso.
  *
+ * A mesma timeline roda no desktop e no celular: abaixo de 900 px
+ * (html.cine-compact) só mudam a composição (CSS), a distância de rolagem
+ * por cena e a qualidade do 3D (resolução, geometria, antisserrilhado).
+ *
+ * Falhas do WebGL (sem contexto, erro ao gerar a geometria, tempo esgotado)
+ * desmontam a sequência na própria página e mostram as ilustrações estáticas,
+ * com o motivo registrado no console e em html[data-webgl-error].
+ *
  * Detalhes de keyframes e como ajustar: MOTION.md.
  */
 import { gsap } from 'gsap';
@@ -17,6 +25,7 @@ import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { Stage3D } from '../three/stage';
 import { defaultState, lerp, clamp01, type FrameRect, type SceneState } from '../three/state';
 import { dpr, loadAssets, readColors, readPresets } from './shared';
+import { COMPACT_BELOW } from './boot';
 import { espHooks, especialidadesApi } from '../ui/especialidades';
 
 gsap.registerPlugin(ScrollTrigger);
@@ -49,8 +58,35 @@ export async function initCinema(): Promise<void> {
   const total = segments.reduce((a, s) => a + s.len, 0);
   const heroVisual = root.dataset.heroVisual === 'foto' ? 'foto' : '3d';
   const html = document.documentElement;
+  const isCompact = () => html.classList.contains('cine-compact');
+  // qualidade decidida na abertura (celular: menos pixels e sem MSAA)
+  const compactAtStart = isCompact();
+  const maxDpr = compactAtStart ? 1.5 : 1.75;
+
+  /* ---------- posição da rolagem ao atualizar/voltar ---------- */
+  // O ScrollTrigger mede a página rolando até o topo na primeira atualização, o
+  // que cancela a restauração automática do navegador: quem atualizava a página
+  // no meio da sequência voltava ao hero. A posição é guardada e devolvida aqui.
+  const scrollKey = `alva:scroll:${location.pathname}`;
+  let restoreY = 0;
+  try {
+    const nav = performance.getEntriesByType('navigation')[0] as PerformanceNavigationTiming | undefined;
+    const saved = Number(sessionStorage.getItem(scrollKey));
+    if ((nav?.type === 'reload' || nav?.type === 'back_forward') && !location.hash && saved > 0) restoreY = saved;
+  } catch {
+    /* sem sessionStorage: começa do topo */
+  }
+  if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
+  window.addEventListener('pagehide', () => {
+    try {
+      sessionStorage.setItem(scrollKey, String(Math.round(window.scrollY)));
+    } catch {
+      /* armazenamento indisponível */
+    }
+  });
 
   /* ---------- ids das cenas passam para os marcadores (âncoras de navegação) ---------- */
+  const movedIds: { panel: HTMLElement; marker: HTMLElement; id: string }[] = [];
   segments.forEach((s) => {
     const panel = document.getElementById(s.id);
     const marker = root.querySelector<HTMLElement>(`[data-cinema-marker="${s.id}"]`);
@@ -58,6 +94,7 @@ export async function initCinema(): Promise<void> {
       panel.dataset.anchorId = s.id;
       panel.removeAttribute('id');
       marker.id = s.id;
+      movedIds.push({ panel, marker, id: s.id });
     }
   });
 
@@ -84,7 +121,7 @@ export async function initCinema(): Promise<void> {
     W = viewport.clientWidth;
     H = viewport.clientHeight;
     vpRect = viewport.getBoundingClientRect();
-    stage?.setSize(W, H, dpr(1.75));
+    stage?.setSize(W, H, dpr(maxDpr));
     const ha = rel(root.querySelector('[data-hero-arch]'));
     if (ha) heroArch = ha;
     for (const name of [...toothAnchorNames, 'arcada']) {
@@ -256,8 +293,10 @@ export async function initCinema(): Promise<void> {
     S({ pulpGlow: 1 }, T(0.3), D(0.24));
     enter(bText, T(0.25), D(0.09), { opacity: 0, y: 26 });
     enter(labels, T(0.32), D(0.07), { opacity: 0, x: 16 }, D(0.045));
-    exit(labels, T(0.6), D(0.05), { x: 10 }, D(0.012));
-    exit(bText, T(0.6), D(0.07), { y: -32 });
+    // no celular as legendas saem antes de o dente atravessar a tela rumo ao quadro C
+    const bOut = compactAtStart ? 0.52 : 0.6;
+    exit(labels, T(bOut), D(0.05), { x: 10 }, D(0.012));
+    exit(bText, T(bOut), D(0.07), { y: -32 });
     // Quadro C (55–100%): câmera recua, dente vai ao terço esquerdo, esmalte se afasta
     Cn({ anchor: 3 }, T(0.55), D(0.2));
     S({ enamelLift: 0.25, enamelTilt: -8 }, T(0.55), D(0.22), 'power2.inOut');
@@ -354,7 +393,7 @@ export async function initCinema(): Promise<void> {
   const scrollTop = () => window.scrollY + root.getBoundingClientRect().top;
   const timeToY = (t: number) => scrollTop() + (t / total) * (st.end - st.start);
   espHooks.scrollTo = (i: number) => {
-    if (!esp) return false;
+    if (!esp || tornDown) return false;
     window.scrollTo({ top: timeToY(esp.start + 1 + i * 0.55 + 0.15), behavior: 'smooth' });
     return true;
   };
@@ -371,18 +410,20 @@ export async function initCinema(): Promise<void> {
     return null;
   };
   root.addEventListener('focusin', (e) => {
+    if (tornDown) return;
     const t = focusTime(e.target as HTMLElement);
     if (t === null) return;
     if (Math.abs(tl.time() - t) > 0.12) window.scrollTo({ top: timeToY(t), behavior: 'auto' });
   });
   const goToHash = () => {
+    if (tornDown) return;
     const id = decodeURIComponent(location.hash.slice(1));
     const s = segments.find((x) => x.id === id);
     if (s) window.scrollTo({ top: timeToY(s.start + (s.id === 'inicio' ? 0 : s.id === 'tratamentos' ? 0.02 : 0.98)), behavior: 'auto' });
   };
   document.addEventListener('click', (e) => {
     const a = (e.target as HTMLElement).closest<HTMLAnchorElement>('a[href*="#"]');
-    if (!a) return;
+    if (!a || tornDown) return;
     const url = new URL(a.href, location.href);
     if (url.pathname !== location.pathname) return;
     const s = segments.find((x) => x.id === url.hash.slice(1));
@@ -397,18 +438,37 @@ export async function initCinema(): Promise<void> {
   measure();
   applyArch();
   if (location.hash) requestAnimationFrame(goToHash);
+  else if (restoreY > 0) {
+    requestAnimationFrame(() => {
+      window.scrollTo({ top: Math.min(restoreY, document.documentElement.scrollHeight - window.innerHeight), behavior: 'instant' });
+      ScrollTrigger.update();
+      st.getTween()?.progress(1); // chega ao estado da posição sem "rebobinar" a partir do hero
+      onTime();
+    });
+  }
 
   let first = true;
+  // o palco só desenha depois de compilar os shaders (warmup): desenhar antes
+  // compila tudo de uma vez na thread principal e trava a rolagem por ~1 s
+  let live = false;
+  let idleAcc = 0;
   const io = new IntersectionObserver(([en]) => (inView = !!en?.isIntersecting), { rootMargin: '0px' });
   io.observe(root);
-  gsap.ticker.add((_t, deltaMs) => {
+  const loop = (_t: number, deltaMs: number) => {
     if (!inView) return;
-    const idle = state.idle > 0.001 && !!stage?.ready;
+    const idle = state.idle > 0.001 && live;
+    if (idle && !dirty && isCompact()) {
+      // giro ocioso no celular a ~30 quadros/s (economiza bateria e CPU)
+      idleAcc += deltaMs;
+      if (idleAcc < 32) return;
+    }
     if (!dirty && !idle) return;
+    const dt = Math.min(0.05, (idleAcc || deltaMs) / 1000);
+    idleAcc = 0;
     dirty = false;
     applyArch(); // o arco (DOM) anima mesmo antes do 3D
-    if (!stage?.ready) return;
-    if (idle) stage.tick(Math.min(0.05, deltaMs / 1000));
+    if (!stage || !live) return;
+    if (idle) stage.tick(dt);
     stage.apply(state, toothRect(), rects.arcada!);
     stage.render();
     updateLeaders();
@@ -416,8 +476,28 @@ export async function initCinema(): Promise<void> {
       first = false;
       html.classList.add('stage-ready');
     }
-  });
-  window.addEventListener('resize', () => ScrollTrigger.refresh());
+  };
+  gsap.ticker.add(loop);
+
+  // Redimensionar/girar: recalcula a trilha e as âncoras. Mudanças só de altura
+  // pequenas (barra de endereço do celular) não refazem a trilha.
+  let lastW = window.innerWidth;
+  let lastH = window.innerHeight;
+  let resizeTimer = 0;
+  const onResize = () => {
+    window.clearTimeout(resizeTimer);
+    resizeTimer = window.setTimeout(() => {
+      const w = window.innerWidth;
+      const h = window.innerHeight;
+      if (w === lastW && Math.abs(h - lastH) < 160) return;
+      lastW = w;
+      lastH = h;
+      html.classList.toggle('cine-compact', w < COMPACT_BELOW);
+      ScrollTrigger.refresh();
+    }, 120);
+  };
+  window.addEventListener('resize', onResize);
+  window.addEventListener('orientationchange', onResize);
   (window as unknown as { __cinema: unknown }).__cinema = {
     tl,
     state,
@@ -427,28 +507,89 @@ export async function initCinema(): Promise<void> {
     get stage() {
       return stage;
     },
+    get live() {
+      return live;
+    },
+  };
+
+  /* ---------- falha do 3D: desmonta a sequência e mostra as ilustrações ---------- */
+  let tornDown = false;
+  const teardown = (reason: string, err?: unknown) => {
+    if (tornDown) return;
+    tornDown = true;
+    console.error(`[cena] WebGL/3D indisponível (${reason}) — exibindo as ilustrações estáticas.`, err ?? '');
+    html.dataset.webglError = reason;
+    gsap.ticker.remove(loop);
+    io.disconnect();
+    window.removeEventListener('resize', onResize);
+    window.removeEventListener('orientationchange', onResize);
+    st.kill();
+    tl.kill();
+    // devolve os elementos animados ao estado do layout estático
+    // (só as propriedades animadas: o markup tem estilos inline próprios, ex. --rows)
+    gsap.set(root.querySelectorAll('[data-cine], [data-cine] *, .trat__label, .leader, .esp__note'), {
+      clearProps: 'opacity,visibility,transform,translate,rotate,scale',
+    });
+    archEl.style.clipPath = '';
+    for (const { panel, marker, id } of movedIds) {
+      marker.removeAttribute('id');
+      panel.id = id;
+    }
+    delete espHooks.scrollTo;
+    try {
+      stage?.dispose();
+    } catch {
+      /* contexto já perdido */
+    }
+    stage = null;
+    html.classList.remove('is-cinema', 'cine-compact', 'cinema-ready', 'stage-ready');
+    html.classList.add('no-webgl');
+    html.dataset.experience = 'fallback';
+    delete html.dataset.surface;
+    document.dispatchEvent(new Event('surfacechange'));
+    ScrollTrigger.refresh();
+    window.dispatchEvent(new Event('resize'));
   };
 
   /* ---------- 3D: depois do carregamento (o SVG do design cobre o intervalo) ---------- */
   await afterLoad();
   try {
-    stage = new Stage3D(canvas, readColors());
+    stage = new Stage3D(canvas, readColors(), { antialias: !compactAtStart });
   } catch (err) {
-    // sem WebGL de verdade: recarrega no modo estático
-    sessionStorage.setItem('alva:no-webgl', '1');
-    window.location.reload();
-    throw err;
+    teardown('sem contexto WebGL', err);
+    return;
   }
-  stage.setPresets(readPresets());
-  stage.setSize(W, H, dpr(1.75));
-  const assets = await loadAssets('cinema', (refined) => {
-    stage?.setAssets(refined);
+  canvas.addEventListener('webglcontextlost', (e) => {
+    e.preventDefault(); // permite que o navegador devolva o contexto
+    live = false;
+  });
+  canvas.addEventListener('webglcontextrestored', () => {
+    live = !!stage?.ready;
     dirty = true;
   });
-  stage.setAssets(assets);
-  stage.apply(state, toothRect(), rects.arcada!);
-  await stage.warmup();
+  stage.setPresets(readPresets());
+  stage.setSize(W, H, dpr(maxDpr));
+  // se a geometria não chegar a tempo (aparelho muito lento, worker travado), desiste
+  const timeout = window.setTimeout(() => teardown('tempo esgotado ao preparar o 3D'), 25_000);
+  try {
+    const assets = await loadAssets(compactAtStart ? 'stacked' : 'cinema', (refined) => {
+      if (tornDown || !stage) return;
+      stage.setAssets(refined);
+      dirty = true;
+    });
+    if (tornDown || !stage) return;
+    stage.setAssets(assets);
+    stage.apply(state, toothRect(), rects.arcada!);
+    await stage.warmup();
+  } catch (err) {
+    window.clearTimeout(timeout);
+    teardown('erro ao preparar a cena', err);
+    return;
+  }
+  window.clearTimeout(timeout);
+  if (tornDown) return;
   measure();
+  live = true;
   dirty = true;
 }
 
@@ -461,8 +602,9 @@ function afterLoad(): Promise<void> {
       done = true;
       resolve();
     };
-    window.addEventListener('wheel', go, { once: true, passive: true });
-    window.addEventListener('keydown', go, { once: true });
+    for (const ev of ['wheel', 'touchstart', 'pointerdown', 'keydown', 'scroll'] as const) {
+      window.addEventListener(ev, go, { once: true, passive: true });
+    }
     const idle = () => {
       const ric = (window as unknown as { requestIdleCallback?: (cb: () => void, o: { timeout: number }) => void }).requestIdleCallback;
       if (ric) ric(go, { timeout: 800 });

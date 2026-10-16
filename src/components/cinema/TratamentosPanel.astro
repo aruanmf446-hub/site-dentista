@@ -604,4 +604,147 @@ const temAssociacao = porCamada.some((p) => p.itens.length > 0);
       margin-top: 24px;
     }
   }
+  /* ---------- Modo cinema compacto (celular/tablet): mesma narrativa A → B → C ---------- */
+  @media (max-width: 899px) {
+    :global(html.is-cinema) .trat__a {
+      left: 20px;
+      right: 20px;
+      top: auto;
+      bottom: calc(var(--mobile-bar-h) + var(--cine-ui-bottom) + 32px);
+      width: auto;
+      text-align: center;
+    }
+    :global(html.is-cinema) .trat__a :global(.eyebrow) {
+      justify-content: center;
+    }
+    :global(html.is-cinema) .trat__a-title {
+      margin-top: 14px;
+      font-size: clamp(2.25rem, 1.4rem + 4.4vw, 3rem);
+    }
+    :global(html.is-cinema) .trat__hint {
+      display: none;
+    }
+    :global(html.is-cinema) .trat__b {
+      left: 20px;
+      right: 20px;
+      top: auto;
+      bottom: calc(var(--mobile-bar-h) + var(--cine-ui-bottom) + 24px);
+      transform: none;
+      width: auto;
+    }
+    :global(html.is-cinema) .trat__b-title {
+      margin-top: 12px;
+      font-size: clamp(2rem, 1.3rem + 3.6vw, 2.75rem);
+    }
+    :global(html.is-cinema) .trat__b-text {
+      margin-top: 10px;
+      max-width: 46ch;
+      font-size: 14px;
+      line-height: 1.5;
+    }
+    :global(html.is-cinema) .trat__label {
+      left: 60vw;
+      width: calc(40vw - 14px);
+    }
+    :global(html.is-cinema) .trat__label-name {
+      font-size: 10px;
+    }
+    :global(html.is-cinema) .trat__label-text {
+      font-size: 12px;
+      line-height: 1.35;
+    }
+    /* A: centro, dentro do arco largo; B: à esquerda, legendas à direita; C: canto superior direito */
+    :global(html.is-cinema) [data-anchor='trat-a'] {
+      left: 25%;
+      top: 19%;
+      width: 50%;
+      height: 38%;
+    }
+    :global(html.is-cinema) [data-anchor='trat-b'] {
+      left: 11%;
+      top: 19%;
+      width: 40%;
+      height: 29%;
+    }
+    :global(html.is-cinema) [data-anchor='trat-c'] {
+      left: 64%;
+      top: calc(var(--header-h) + 12px);
+      width: 32%;
+      height: 24%;
+    }
+    :global(html.is-cinema) .trat__c {
+      justify-content: flex-start;
+      padding: calc(var(--header-h) + 28px) 20px calc(var(--mobile-bar-h) + var(--cine-ui-bottom) + 16px);
+      text-align: left;
+    }
+    :global(html.is-cinema) .trat__c-head {
+      width: 62%;
+    }
+    :global(html.is-cinema) .trat__c-head :global(.eyebrow) {
+      justify-content: flex-start;
+    }
+    :global(html.is-cinema) .trat__c-head :global(.eyebrow__rule) {
+      display: block;
+    }
+    :global(html.is-cinema) .trat__c-title {
+      font-size: clamp(1.9rem, 1.2rem + 3.4vw, 2.6rem);
+    }
+    :global(html.is-cinema) .trat__list,
+    :global(html.is-cinema) .trat__list--secondary {
+      display: grid;
+      margin-top: clamp(18px, 4vh, 36px);
+    }
+    :global(html.is-cinema) .trat__list a,
+    :global(html.is-cinema) .trat__list--poucos a {
+      min-height: 44px;
+    }
+    :global(html.is-cinema) .trat__name {
+      font-size: 20px;
+      padding: 4px 0;
+    }
+    :global(html.is-cinema) .trat__list--poucos .trat__name {
+      font-size: 26px;
+    }
+    /* a lista completa fica em /tratamentos/ (link "Ver todos") */
+    :global(html.is-cinema) .trat__list li:nth-child(n + 7) {
+      display: none;
+    }
+    :global(html.is-cinema) .trat__ctas {
+      margin-top: clamp(16px, 3vh, 28px);
+      justify-content: flex-start;
+    }
+  }
+  @media (max-width: 899px) and (max-height: 740px) {
+    :global(html.is-cinema) .trat__list li:nth-child(n + 5) {
+      display: none;
+    }
+    :global(html.is-cinema) .trat__label-text {
+      display: none;
+    }
+  }
+  @media (min-width: 600px) and (max-width: 899px) {
+    :global(html.is-cinema) .trat__a,
+    :global(html.is-cinema) .trat__b,
+    :global(html.is-cinema) .trat__c {
+      padding-inline: max(20px, calc((100vw - 640px) / 2));
+    }
+    :global(html.is-cinema) .trat__a,
+    :global(html.is-cinema) .trat__b {
+      left: 0;
+      right: 0;
+    }
+  }
+  /* Desktop estreito (900–1239 px): dente do quadro B menor, legendas mais à direita */
+  @media (min-width: 900px) and (max-width: 1239px) {
+    :global(html.is-cinema) [data-anchor='trat-b'] {
+      left: 40%;
+      top: 18%;
+      width: 20%;
+      height: 56%;
+    }
+    :global(html.is-cinema) .trat__label {
+      left: 68vw;
+      width: min(250px, 28vw);
+    }
+  }
 </style>

@@ -63,7 +63,11 @@ const ld = [...(path === '/' ? organizationLd(c, base) : []), ...jsonLd];
 
 <!--
   Decide o modo de experiência antes da primeira pintura (evita CLS):
-  - is-cinema: desktop ≥ 900 px, sem "reduzir movimento" e com WebGL disponível.
+  - is-cinema: sequência 3D ligada à rolagem em qualquer largura, sem "reduzir
+    movimento" e com WebGL no navegador. Abaixo de 900 px soma-se cine-compact
+    (composição de celular/tablet, trechos fixados mais curtos, qualidade menor).
+    Se o WebGL falhar de fato, a própria página desmonta a sequência e mostra
+    as ilustrações estáticas (scripts/cinema/cinema.ts) — sem bloquear a sessão.
   - motion: animações de conteúdo permitidas.
   Se o JS de animação não carregar em 4 s, o conteúdo volta a ficar visível.
 -->
@@ -73,11 +77,14 @@ const ld = [...(path === '/' ? organizationLd(c, base) : []), ...jsonLd];
     d.classList.add('js');
     var rm = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     if (!rm) d.classList.add('motion');
-    var semWebgl = false;
     try {
-      semWebgl = sessionStorage.getItem('alva:no-webgl') === '1';
+      // versões anteriores gravavam esta chave e desligavam o 3D na sessão inteira
+      sessionStorage.removeItem('alva:no-webgl');
     } catch (e) {}
-    if (cinema && !rm && !semWebgl && window.innerWidth >= 900 && 'WebGLRenderingContext' in window) d.classList.add('is-cinema');
+    if (cinema && !rm && 'WebGLRenderingContext' in window) {
+      d.classList.add('is-cinema');
+      if (window.innerWidth < 900) d.classList.add('cine-compact');
+    }
     window.setTimeout(function () {
       if (!d.classList.contains('motion-ready')) d.classList.remove('motion');
     }, 4000);
