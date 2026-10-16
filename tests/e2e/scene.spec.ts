@@ -168,8 +168,8 @@ test.describe('empilhado (mobile)', () => {
     await waitScene(page);
     await expect(page.locator('html')).not.toHaveClass(/is-cinema/);
     const rot0 = await page.evaluate(() => (window as any).__stacked.views.find((v: any) => v.name === 'hero').state.toothRotY);
-    await page.evaluate(() => window.scrollTo(0, 300));
-    await page.waitForTimeout(300);
+    await page.evaluate(() => window.scrollTo({ top: 300, behavior: 'instant' }));
+    await page.waitForTimeout(400);
     const rot1 = await page.evaluate(() => (window as any).__stacked.views.find((v: any) => v.name === 'hero').state.toothRotY);
     expect(rot1).toBeGreaterThan(rot0 + 3);
     await page.screenshot({ path: `${OUT}/mobile-hero.png` });

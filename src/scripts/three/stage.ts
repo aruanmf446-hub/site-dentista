@@ -102,9 +102,6 @@ export class Stage3D {
     this.renderer.outputColorSpace = THREE.SRGBColorSpace;
     this.renderer.localClippingEnabled = true;
 
-    const pmrem = new THREE.PMREMGenerator(this.renderer);
-    this.scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
-    pmrem.dispose();
     this.scene.environmentIntensity = 0.6;
 
     const hemi = new THREE.HemisphereLight(0xffffff, new THREE.Color(colors.primaryDark), 0.55);
@@ -309,6 +306,31 @@ export class Stage3D {
       new THREE.MeshStandardMaterial({ color: primary, roughness: 0.3, metalness: 0.5, transparent: true, opacity: 0 }),
     );
     this.arcade.add(this.wire);
+  }
+
+  /**
+   * Compila os shaders sem travar a página (KHR_parallel_shader_compile,
+   * quando disponível). Chamado antes do primeiro quadro.
+   */
+  async warmup(): Promise<void> {
+    // mapa de ambiente (reflexos da porcelana) em uma tarefa separada
+    await new Promise((r) => setTimeout(r, 0));
+    if (!this.scene.environment) {
+      const pmrem = new THREE.PMREMGenerator(this.renderer);
+      this.scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
+      pmrem.dispose();
+    }
+    await new Promise((r) => setTimeout(r, 0));
+    const prev = this.arcade.visible;
+    this.arcade.visible = true;
+    this.cutGroup.visible = true;
+    this.quarterGroup.visible = true;
+    try {
+      await this.renderer.compileAsync(this.scene, this.camera);
+    } catch {
+      /* navegadores sem compilação assíncrona compilam no primeiro quadro */
+    }
+    this.arcade.visible = prev;
   }
 
   setPresets(p: SpecPreset[]): void {

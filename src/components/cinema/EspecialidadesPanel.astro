@@ -8,6 +8,7 @@ import site from '@/lib/site';
 import Eyebrow from '@/components/ui/Eyebrow.astro';
 import Title from '@/components/ui/Title.astro';
 import Icon from '@/components/ui/Icon.astro';
+import ArchPhoto from '@/components/ui/ArchPhoto.astro';
 import ArcadeCss from './svg/ArcadeCss.astro';
 import { dentesDestacados } from '@/lib/arcade';
 
@@ -72,6 +73,7 @@ const presets = specs.map((s) => ({ dentes: dentesDestacados(s.destaque.dentes),
             const link = linkPara(s);
             return (
               <article class="esp__card" data-spec-detail={i} hidden={i !== 0}>
+                {s.foto && <ArchPhoto foto={s.foto} class="esp__photo" sizes="96px" widths={[96, 192]} reveal={false} />}
                 <p class="esp__count">
                   {String(i + 1).padStart(2, '0')} / {total}
                 </p>
@@ -197,6 +199,11 @@ const presets = specs.map((s) => ({ dentes: dentesDestacados(s.destaque.dentes),
   html:not(.js) .esp__card[hidden] {
     display: block;
     margin-top: 24px;
+  }
+  .esp__photo {
+    width: 72px;
+    height: 96px;
+    margin: 0 auto 14px;
   }
   .esp__count {
     font-size: 11px;

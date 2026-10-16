@@ -40,37 +40,6 @@ const temAssociacao = porCamada.some((p) => p.itens.length > 0);
 >
   <div class="trat__bg" aria-hidden="true"></div>
 
-  <!-- Quadro A -->
-  <div class="trat__a cine-only" data-cine="trat-a">
-    <Eyebrow numero={numero} texto="Tratamentos" tone="dark" />
-    <Title as="p" class="trat__a-title" text={sec.tituloAbertura} />
-  </div>
-  <div class="trat__hint cine-only" aria-hidden="true" data-cine="trat-hint">Role para abrir<span /></div>
-
-  <!-- Quadro B -->
-  <div class="trat__b cine-only" data-cine="trat-b">
-    <Eyebrow numero={numero} texto="Tratamentos" tone="dark" />
-    <Title as="h3" class="trat__b-title" text={sec.tituloAnatomia} />
-    <p class="trat__b-text">{sec.textoAnatomia}</p>
-  </div>
-  <ul class="trat__labels cine-only" role="list" aria-label="Estruturas do dente" data-cine="trat-labels">
-    {
-      LEGENDAS.map((l) => (
-        <li class="trat__label" data-label={l.id}>
-          <span class="trat__label-name">{l.nome}</span>
-          <span class="trat__label-text">{l.texto}</span>
-        </li>
-      ))
-    }
-  </ul>
-
-  <!-- Âncoras de composição da cena 3D (medidas em tempo real) -->
-  <div class="trat__anchors cine-only" aria-hidden="true">
-    <span data-anchor="trat-a"></span>
-    <span data-anchor="trat-b"></span>
-    <span data-anchor="trat-c"></span>
-  </div>
-
   <!-- Quadro C / conteúdo principal -->
   <div class="trat__c" data-cine="trat-c">
     <div class="trat__c-head">
@@ -158,6 +127,39 @@ const temAssociacao = porCamada.some((p) => p.itens.length > 0);
       </a>
     </div>
   </div>
+  <!-- Quadros A e B (só no modo cinema) — depois do conteúdo principal na ordem do DOM,
+       para manter a hierarquia de títulos (h2 → h3) -->
+  <!-- Quadro A -->
+  <div class="trat__a cine-only" data-cine="trat-a">
+    <Eyebrow numero={numero} texto="Tratamentos" tone="dark" />
+    <Title as="p" class="trat__a-title" text={sec.tituloAbertura} />
+  </div>
+  <div class="trat__hint cine-only" aria-hidden="true" data-cine="trat-hint">Role para abrir<span /></div>
+
+  <!-- Quadro B -->
+  <div class="trat__b cine-only" data-cine="trat-b">
+    <Eyebrow numero={numero} texto="Tratamentos" tone="dark" />
+    <Title as="h3" class="trat__b-title" text={sec.tituloAnatomia} />
+    <p class="trat__b-text">{sec.textoAnatomia}</p>
+  </div>
+  <ul class="trat__labels cine-only" role="list" aria-label="Estruturas do dente" data-cine="trat-labels">
+    {
+      LEGENDAS.map((l) => (
+        <li class="trat__label" data-label={l.id}>
+          <span class="trat__label-name">{l.nome}</span>
+          <span class="trat__label-text">{l.texto}</span>
+        </li>
+      ))
+    }
+  </ul>
+
+  <!-- Âncoras de composição da cena 3D (medidas em tempo real) -->
+  <div class="trat__anchors cine-only" aria-hidden="true">
+    <span data-anchor="trat-a"></span>
+    <span data-anchor="trat-b"></span>
+    <span data-anchor="trat-c"></span>
+  </div>
+
 </section>
 
 <style>

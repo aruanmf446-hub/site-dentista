@@ -62,8 +62,8 @@ export async function initCinema(): Promise<void> {
   });
 
   /* ---------- palco 3D ---------- */
-  const stage = new Stage3D(canvas, readColors());
-  stage.setPresets(readPresets());
+  // o contexto WebGL é criado só depois do carregamento da página (ver start3D)
+  let stage: Stage3D | null = null;
   const state: SceneState = { ...defaultState() };
   const cine: Cine = { anchor: 0, arch: 0, archAlpha: 1 };
 
@@ -84,7 +84,7 @@ export async function initCinema(): Promise<void> {
     W = viewport.clientWidth;
     H = viewport.clientHeight;
     vpRect = viewport.getBoundingClientRect();
-    stage.setSize(W, H, dpr(1.75));
+    stage?.setSize(W, H, dpr(1.75));
     const ha = rel(root.querySelector('[data-hero-arch]'));
     if (ha) heroArch = ha;
     for (const name of [...toothAnchorNames, 'arcada']) {
@@ -145,6 +145,8 @@ export async function initCinema(): Promise<void> {
   /* ---------- legendas anatômicas presas ao modelo ---------- */
   const labels = Array.from(root.querySelectorAll<HTMLElement>('.trat__label[data-label]'));
   const updateLeaders = () => {
+    if (!stage) return;
+    const st3 = stage;
     labels.forEach((label) => {
       const id = label.dataset.label!;
       const leader = leaders.find((l) => l.dataset.leader === id);
@@ -154,7 +156,7 @@ export async function initCinema(): Promise<void> {
         leader.style.opacity = '0';
         return;
       }
-      const p = stage.project(id);
+      const p = st3.project(id);
       const labelLeft = label.getBoundingClientRect().left - vpRect.left;
       label.style.top = `${(p.y - 9).toFixed(1)}px`;
       leader.style.opacity = String(op);
@@ -391,15 +393,9 @@ export async function initCinema(): Promise<void> {
     window.scrollTo({ top: target, behavior: 'smooth' });
   });
 
-  /* ---------- carregamento do modelo e laço de renderização ---------- */
+  /* ---------- laço de renderização ---------- */
   measure();
   applyArch();
-  const assets = await loadAssets('cinema', (refined) => {
-    stage.setAssets(refined);
-    dirty = true;
-  });
-  stage.setAssets(assets);
-  ScrollTrigger.refresh();
   if (location.hash) requestAnimationFrame(goToHash);
 
   let first = true;
@@ -407,11 +403,12 @@ export async function initCinema(): Promise<void> {
   io.observe(root);
   gsap.ticker.add((_t, deltaMs) => {
     if (!inView) return;
-    const idle = state.idle > 0.001;
+    const idle = state.idle > 0.001 && !!stage?.ready;
     if (!dirty && !idle) return;
-    if (idle) stage.tick(Math.min(0.05, deltaMs / 1000));
     dirty = false;
-    applyArch();
+    applyArch(); // o arco (DOM) anima mesmo antes do 3D
+    if (!stage?.ready) return;
+    if (idle) stage.tick(Math.min(0.05, deltaMs / 1000));
     stage.apply(state, toothRect(), rects.arcada!);
     stage.render();
     updateLeaders();
@@ -421,5 +418,57 @@ export async function initCinema(): Promise<void> {
     }
   });
   window.addEventListener('resize', () => ScrollTrigger.refresh());
-  (window as unknown as { __cinema: unknown }).__cinema = { tl, state, cine, stage, segments, st };
+  (window as unknown as { __cinema: unknown }).__cinema = {
+    tl,
+    state,
+    cine,
+    segments,
+    st,
+    get stage() {
+      return stage;
+    },
+  };
+
+  /* ---------- 3D: depois do carregamento (o SVG do design cobre o intervalo) ---------- */
+  await afterLoad();
+  try {
+    stage = new Stage3D(canvas, readColors());
+  } catch (err) {
+    // sem WebGL de verdade: recarrega no modo estático
+    sessionStorage.setItem('alva:no-webgl', '1');
+    window.location.reload();
+    throw err;
+  }
+  stage.setPresets(readPresets());
+  stage.setSize(W, H, dpr(1.75));
+  const assets = await loadAssets('cinema', (refined) => {
+    stage?.setAssets(refined);
+    dirty = true;
+  });
+  stage.setAssets(assets);
+  stage.apply(state, toothRect(), rects.arcada!);
+  await stage.warmup();
+  measure();
+  dirty = true;
+}
+
+/** Resolve após o evento load + um instante ocioso (ou na primeira rolagem). */
+function afterLoad(): Promise<void> {
+  return new Promise((resolve) => {
+    let done = false;
+    const go = () => {
+      if (done) return;
+      done = true;
+      resolve();
+    };
+    window.addEventListener('wheel', go, { once: true, passive: true });
+    window.addEventListener('keydown', go, { once: true });
+    const idle = () => {
+      const ric = (window as unknown as { requestIdleCallback?: (cb: () => void, o: { timeout: number }) => void }).requestIdleCallback;
+      if (ric) ric(go, { timeout: 800 });
+      else window.setTimeout(go, 300);
+    };
+    if (document.readyState === 'complete') idle();
+    else window.addEventListener('load', idle, { once: true });
+  });
 }

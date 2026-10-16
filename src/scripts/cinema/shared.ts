@@ -5,18 +5,6 @@
 import { loadGlb, loadProcedural, type ToothAssets } from '../three/model-source';
 import type { SpecPreset, StageColors } from '../three/stage';
 
-export function webglAvailable(): boolean {
-  try {
-    const c = document.createElement('canvas');
-    const gl = (c.getContext('webgl2') || c.getContext('webgl')) as WebGLRenderingContext | null;
-    if (!gl) return false;
-    gl.getExtension('WEBGL_lose_context')?.loseContext();
-    return true;
-  } catch {
-    return false;
-  }
-}
-
 export function readColors(): StageColors {
   const cs = getComputedStyle(document.documentElement);
   const v = (name: string, fb: string) => cs.getPropertyValue(name).trim() || fb;
