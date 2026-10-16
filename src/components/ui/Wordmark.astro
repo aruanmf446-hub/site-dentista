@@ -31,7 +31,8 @@ const scale = { lg: 1, md: 0.82, sm: 0.62 }[size];
           <path d="M1.5 23V10a8.5 8.5 0 0 1 17 0v13" stroke="var(--c-primary)" stroke-width="1.7" />
         </svg>
         <span class="wordmark__name">{marca.nomeCurto}</span>
-        {descritor && marca.descritor && <span class="wordmark__desc">{marca.descritor}</span>}
+        {descritor && marca.descritor && <span class="wordmark__desc"> {marca.descritor}</span>}
+        <span class="sr-only"> — página inicial</span>
       </>
     )
   }

@@ -184,7 +184,7 @@ const total = segments.reduce((acc, s) => acc + s.len, 0);
   html.is-cinema .panel [data-cine] {
     will-change: transform, opacity;
   }
-  html.is-cinema .panel:not(.is-active) {
+  html.is-cinema.cinema-ready .panel:not(.is-active) {
     pointer-events: none;
   }
   html.is-cinema .hero__inner {

@@ -25,12 +25,11 @@ for (const p of points) {
   }, p);
   await page.evaluate((y) => window.scrollTo(0, y), y);
   // espera a timeline (scrub) alcançar a rolagem — renderização por software é lenta
-  await page.waitForFunction(() => {
+  await page.waitForFunction((p) => {
     const c = window.__cinema;
     if (!c) return true;
-    const target = c.st.progress * c.tl.duration();
-    return Math.abs(c.tl.time() - target) < 0.01;
-  }, null, { timeout: 20000, polling: 200 }).catch(() => {});
+    return Math.abs(c.st.progress - p) < 0.003 && Math.abs(c.tl.time() - c.st.progress * c.tl.duration()) < 0.01;
+  }, p, { timeout: 30000, polling: 200 }).catch(() => {});
   await page.waitForTimeout(500);
   const st = await page.evaluate(() => {
     const c = window.__cinema;

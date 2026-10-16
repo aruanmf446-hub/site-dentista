@@ -63,7 +63,8 @@ const label = placeholder ? (typeof src === 'string' && isPlaceholder(src) ? src
 </div>
 
 <style>
-  .arch {
+  /* :where() = especificidade zero: quem usa o componente pode ajustar forma e posição */
+  :where(.arch) {
     position: relative;
     overflow: hidden;
     /* raio "infinito": o navegador reduz para meia largura → arco perfeito */

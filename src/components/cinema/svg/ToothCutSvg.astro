@@ -103,7 +103,8 @@ const r = (s: string) => `#${id}-${s}`;
 </div>
 
 <style>
-  .tooth-cut {
+  /* :where() = especificidade zero: quem usa o componente define a posição */
+  :where(.tooth-cut) {
     position: relative;
   }
   .tooth-cut svg {

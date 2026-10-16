@@ -1,0 +1,132 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>Alva — Agendamento e contato (100%)</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600&amp;family=Instrument+Serif:ital@0;1&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#5B1626}a:hover{color:#3E0D18}
+input::placeholder{color:#C9AEB2}
+select,input{font:inherit}
+</style>
+</helmet>
+<div style="position: relative; width: 1440px; height: 900px; overflow: hidden; background: #FCFAF8; color: #1F1719; font-family: 'Hanken Grotesk', sans-serif">
+
+<header style="position: absolute; left: 96px; top: 18px; height: 60px; box-sizing: border-box; padding: 0 8px 0 22px; border-radius: 999px; background: #FFFFFF; border: 1px solid #EEE5E3; box-shadow: 0 12px 40px -22px rgba(31,23,25,0.4); display: flex; align-items: center; gap: 30px; z-index: 2">
+<a href="#" style="display: flex; align-items: center; gap: 8px; text-decoration: none; color: #1F1719" aria-label="Alva Odontologia — início">
+<svg width="16" height="20" viewBox="0 0 20 24" fill="none" aria-hidden="true"><path d="M1.5 23V10a8.5 8.5 0 0 1 17 0v13" stroke="{{vinho}}" stroke-width="1.8"></path></svg>
+<span style="font-family: 'Instrument Serif', serif; font-style: italic; font-size: 26px; line-height: 1">alva</span>
+</a>
+<nav aria-label="Principal" style="display: flex; gap: 24px; font-size: 13px">
+<a href="#" style="color: #1F1719; text-decoration: none">Tratamentos</a>
+<a href="#" style="color: #1F1719; text-decoration: none">Especialidades</a>
+<a href="#" style="color: #1F1719; text-decoration: none">Equipe</a>
+<a href="#" style="color: #1F1719; text-decoration: none">Unidades</a>
+<a href="#" style="color: {{vinho}}; text-decoration: none; font-weight: 600">Contato</a>
+</nav>
+</header>
+
+<div style="position: absolute; left: 96px; top: 168px; width: 560px">
+<div style="display: flex; align-items: center; gap: 14px; font-size: 12px; letter-spacing: 0.22em; text-transform: uppercase; color: #6E6063">
+<span style="display: block; width: 32px; height: 1px; background: {{vinho}}"></span>
+04 · Agendamento
+</div>
+<h2 style="margin: 26px 0 0; font-family: 'Instrument Serif', serif; font-weight: 400; font-size: 78px; line-height: 0.98; letter-spacing: -0.015em">Vamos cuidar do seu <span style="font-style: italic; color: {{vinho}}">sorriso?</span></h2>
+<p style="margin: 26px 0 0; width: 440px; font-size: 17px; line-height: 1.6; color: #5E5154">Escolha a unidade e o melhor período. A equipe confirma o horário com você pelo WhatsApp.</p>
+<a href="#" style="margin-top: 32px; height: 62px; width: 330px; box-sizing: border-box; padding: 0 26px; border-radius: 999px; background: {{vinho}}; color: #FFFFFF; display: flex; align-items: center; justify-content: space-between; font-size: 16px; font-weight: 500; text-decoration: none">
+<span style="display: flex; align-items: center; gap: 12px">
+<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20.5 11.6a8.6 8.6 0 0 1-12.6 7.6L3.5 20.5l1.4-4.2a8.6 8.6 0 1 1 15.6-4.7z"></path><path d="M9.2 8.6c.2 2.9 2.4 5.3 5.4 5.9l1.1-1.3 1.7.9"></path></svg>
+Agendar pelo WhatsApp</span>
+<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"></path></svg></a>
+<dl style="margin: 48px 0 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 26px 40px; font-size: 15px">
+<div><dt style="font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; color: #6E6063">Telefone</dt><dd style="margin: 6px 0 0">[(00) 0000-0000]</dd></div>
+<div><dt style="font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; color: #6E6063">E-mail</dt><dd style="margin: 6px 0 0">[contato@clinica.com.br]</dd></div>
+<div><dt style="font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; color: #6E6063">Unidade principal</dt><dd style="margin: 6px 0 0">[Rua, número — Bairro, Cidade/UF]</dd></div>
+<div><dt style="font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; color: #6E6063">Horários</dt><dd style="margin: 6px 0 0">Seg a sex [8h–20h] · Sáb [8h–13h]</dd></div>
+</dl>
+</div>
+
+<div style="position: absolute; left: 722px; top: 92px; width: 580px; height: 752px; box-sizing: border-box; border: 1px solid #E2D4D1; border-bottom: 0; border-radius: 290px 290px 0 0"></div>
+<div style="position: absolute; left: 740px; top: 110px; width: 544px; height: 734px; border-radius: 272px 272px 0 0; background: {{vinho}}; color: #F7EDEA">
+<div style="position: absolute; left: 212px; top: 192px; width: 120px; height: 18px; border-radius: 50%; background: {{vinhoEscuro}}; filter: blur(8px)"></div>
+<svg style="position: absolute; left: 222px; top: 40px; transform: rotate(-6deg)" width="100" height="152" viewBox="52 50 296 450" aria-hidden="true">
+<defs>
+<radialGradient id="porc" cx="36%" cy="28%" r="78%">
+<stop offset="0" stop-color="#FFFFFF"></stop>
+<stop offset="0.42" stop-color="#F7F0ED"></stop>
+<stop offset="0.78" stop-color="#DECCC8"></stop>
+<stop offset="1" stop-color="#B59894"></stop>
+</radialGradient>
+</defs>
+<path d="M70 150 C60 90 110 60 150 80 C175 92 185 70 200 68 C215 70 225 92 250 80 C290 60 340 90 330 150 C325 200 320 240 312 270 C305 330 300 400 280 470 C272 495 245 495 240 465 C232 410 222 350 200 340 C178 350 168 410 160 465 C155 495 128 495 120 470 C100 400 95 330 88 270 C80 240 75 200 70 150 Z" fill="url(#porc)"></path>
+</svg>
+<form style="position: absolute; left: 62px; top: 236px; width: 420px; display: flex; flex-direction: column; gap: 20px" aria-label="Solicitar horário">
+<div style="font-family: 'Instrument Serif', serif; font-size: 32px; text-align: center; color: #FBF4F2">Solicite seu horário</div>
+<label style="display: flex; flex-direction: column; gap: 6px; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: #E3CDD0">Nome
+<input type="text" placeholder="Seu nome completo" style="height: 38px; border: 0; border-bottom: 1px solid rgba(247,237,234,0.45); background: transparent; color: #FBF4F2; font-size: 16px; letter-spacing: 0; text-transform: none; padding: 0; outline: none">
+</label>
+<label style="display: flex; flex-direction: column; gap: 6px; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: #E3CDD0">WhatsApp
+<input type="tel" placeholder="(00) 00000-0000" style="height: 38px; border: 0; border-bottom: 1px solid rgba(247,237,234,0.45); background: transparent; color: #FBF4F2; font-size: 16px; letter-spacing: 0; text-transform: none; padding: 0; outline: none">
+</label>
+<div style="display: flex; gap: 22px">
+<label style="flex: 1; display: flex; flex-direction: column; gap: 6px; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: #E3CDD0">Unidade
+<select style="height: 38px; border: 0; border-bottom: 1px solid rgba(247,237,234,0.45); background: transparent; color: #FBF4F2; font-size: 16px; letter-spacing: 0; text-transform: none; padding: 0; appearance: none"><option>Centro</option><option>Jardins</option><option>[Unidade 3]</option></select>
+</label>
+<label style="flex: 1; display: flex; flex-direction: column; gap: 6px; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: #E3CDD0">Interesse
+<select style="height: 38px; border: 0; border-bottom: 1px solid rgba(247,237,234,0.45); background: transparent; color: #FBF4F2; font-size: 16px; letter-spacing: 0; text-transform: none; padding: 0; appearance: none"><option>Avaliação</option><option>Limpeza</option><option>Implantes</option><option>Ortodontia</option></select>
+</label>
+</div>
+<fieldset style="border: 0; margin: 0; padding: 0; display: flex; align-items: center; gap: 10px">
+<legend style="float: left; margin-right: 8px; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: #E3CDD0">Período</legend>
+<label style="height: 38px; padding: 0 16px; border-radius: 999px; background: #FBF4F2; color: {{vinho}}; display: flex; align-items: center; gap: 6px; font-size: 14px; font-weight: 600"><input type="radio" name="per" checked="" style="margin: 0; accent-color: {{vinho}}">Manhã</label>
+<label style="height: 38px; padding: 0 16px; border-radius: 999px; border: 1px solid rgba(247,237,234,0.45); display: flex; align-items: center; gap: 6px; font-size: 14px"><input type="radio" name="per" style="margin: 0">Tarde</label>
+<label style="height: 38px; padding: 0 16px; border-radius: 999px; border: 1px solid rgba(247,237,234,0.45); display: flex; align-items: center; gap: 6px; font-size: 14px"><input type="radio" name="per" style="margin: 0">Noite</label>
+</fieldset>
+<label style="display: flex; gap: 10px; align-items: flex-start; font-size: 12px; line-height: 1.5; color: #E3CDD0"><input type="checkbox" style="margin: 2px 0 0">Autorizo o contato da clínica sobre este agendamento, conforme a Política de Privacidade (LGPD).</label>
+<button type="button" style="height: 56px; border: 0; border-radius: 999px; background: #FBF4F2; color: {{vinho}}; font: inherit; font-size: 15px; font-weight: 600; cursor: pointer">Solicitar horário</button>
+</form>
+</div>
+
+<nav aria-label="Progresso da página" style="position: absolute; right: 30px; top: 330px; display: flex; flex-direction: column; gap: 18px; font-size: 11px; color: #9A8C8F; align-items: flex-end">
+<span style="display: flex; align-items: center; gap: 8px">00<span style="display: block; width: 10px; height: 1px; background: #C9BBBE"></span></span>
+<span style="display: flex; align-items: center; gap: 8px">01<span style="display: block; width: 10px; height: 1px; background: #C9BBBE"></span></span>
+<span style="display: flex; align-items: center; gap: 8px">02<span style="display: block; width: 10px; height: 1px; background: #C9BBBE"></span></span>
+<span style="display: flex; align-items: center; gap: 8px">03<span style="display: block; width: 10px; height: 1px; background: #C9BBBE"></span></span>
+<span style="display: flex; align-items: center; gap: 8px; color: {{vinho}}; font-weight: 600">04<span style="display: block; width: 22px; height: 1px; background: {{vinho}}"></span></span>
+</nav>
+
+<footer style="position: absolute; left: 0; bottom: 0; width: 1440px; height: 56px; box-sizing: border-box; padding: 0 220px 0 96px; border-top: 1px solid #E6DCD9; background: #FCFAF8; display: flex; align-items: center; gap: 36px; font-size: 12px; color: #6E6063">
+<span style="font-family: 'Instrument Serif', serif; font-style: italic; font-size: 20px; color: #1F1719">alva</span>
+<span>Responsável técnico: Dr(a). [Nome] — CRO-[UF] [00000]</span>
+<a href="#" style="color: #6E6063">Política de privacidade</a>
+<a href="#" style="color: #6E6063">Instagram</a>
+<span style="margin-left: auto">© 2026 [Razão social] · CNPJ [00.000.000/0000-00]</span>
+</footer>
+
+<a href="#" style="position: absolute; right: 32px; bottom: 76px; height: 54px; padding: 0 22px 0 18px; border-radius: 999px; background: #FFFFFF; color: {{vinho}}; border: 1px solid #E6DCD9; box-shadow: 0 10px 30px -12px rgba(62,13,24,0.35); display: flex; align-items: center; gap: 10px; font-size: 14px; font-weight: 600; text-decoration: none">
+<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20.5 11.6a8.6 8.6 0 0 1-12.6 7.6L3.5 20.5l1.4-4.2a8.6 8.6 0 1 1 15.6-4.7z"></path><path d="M9.2 8.6c.2 2.9 2.4 5.3 5.4 5.9l1.1-1.3 1.7.9"></path></svg>
+WhatsApp</a>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"vinho":{"editor":"color","default":"#5B1626","options":["#5B1626","#7A2438","#2F3B52","#3F5A4C"]},"$preview":{"width":1440,"height":900}}'>
+class Component extends DCLogic {
+  shade(hex, f) {
+    const n = parseInt(String(hex).replace('#', ''), 16);
+    const c = [n >> 16, (n >> 8) & 255, n & 255].map(function (v) { return Math.max(0, Math.min(255, Math.round(v * f))).toString(16).padStart(2, '0'); });
+    return '#' + c.join('');
+  }
+  renderVals() {
+    const vinho = this.props.vinho ?? '#5B1626';
+    return { vinho: vinho, vinhoEscuro: this.shade(vinho, 0.5) };
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,169 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>Alva — Especialidades (50%)</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600&amp;family=Instrument+Serif:ital@0;1&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#5B1626}a:hover{color:#3E0D18}
+</style>
+</helmet>
+<div style="position: relative; width: 1440px; height: 900px; overflow: hidden; background: #FCFAF8; color: #1F1719; font-family: 'Hanken Grotesk', sans-serif">
+
+<header style="position: absolute; left: 50%; top: 18px; transform: translateX(-50%); height: 60px; box-sizing: border-box; padding: 0 8px 0 22px; border-radius: 999px; background: #FFFFFF; border: 1px solid #EEE5E3; box-shadow: 0 12px 40px -22px rgba(31,23,25,0.4); display: flex; align-items: center; gap: 30px; color: #1F1719; z-index: 2">
+<a href="#" style="display: flex; align-items: center; gap: 8px; text-decoration: none; color: #1F1719" aria-label="Alva Odontologia — início">
+<svg width="16" height="20" viewBox="0 0 20 24" fill="none" aria-hidden="true"><path d="M1.5 23V10a8.5 8.5 0 0 1 17 0v13" stroke="{{vinho}}" stroke-width="1.8"></path></svg>
+<span style="font-family: 'Instrument Serif', serif; font-style: italic; font-size: 26px; line-height: 1">alva</span>
+</a>
+<nav aria-label="Principal" style="display: flex; gap: 24px; font-size: 13px">
+<a href="#" style="color: #1F1719; text-decoration: none">Tratamentos</a>
+<a href="#" style="color: {{vinho}}; text-decoration: none; font-weight: 600">Especialidades</a>
+<a href="#" style="color: #1F1719; text-decoration: none">Equipe</a>
+<a href="#" style="color: #1F1719; text-decoration: none">Unidades</a>
+<a href="#" style="color: #1F1719; text-decoration: none">Contato</a>
+</nav>
+<a href="#" style="height: 44px; padding: 0 20px; border-radius: 999px; background: {{vinho}}; color: #FFFFFF; display: flex; align-items: center; font-size: 13px; font-weight: 500; text-decoration: none">Agendar</a>
+</header>
+
+<div style="position: absolute; left: 96px; top: 170px; width: 470px">
+<div style="display: flex; align-items: center; gap: 14px; font-size: 12px; letter-spacing: 0.22em; text-transform: uppercase; color: #6E6063">
+<span style="display: block; width: 32px; height: 1px; background: {{vinho}}"></span>
+02 · Especialidades
+</div>
+<h2 style="margin: 26px 0 0; font-family: 'Instrument Serif', serif; font-weight: 400; font-size: 58px; line-height: 1.02; letter-spacing: -0.01em">Um especialista para cada <span style="font-style: italic; color: {{vinho}}">etapa</span> do seu sorriso.</h2>
+<ul style="list-style: none; margin: 44px 0 0; padding: 0; width: 420px; border-bottom: 1px solid #E6DCD9">
+<sc-for list="{{specs}}" as="s" hint-placeholder-count="6">
+<li style="border-top: 1px solid #E6DCD9">
+<button type="button" onClick="{{s.pick}}" style="{{s.btnStyle}}">
+<span style="font-size: 12px; width: 28px; text-align: left; font-family: 'Hanken Grotesk', sans-serif">{{s.num}}</span>
+<span style="flex: 1; text-align: left">{{s.nome}}</span>
+<sc-if value="{{s.active}}" hint-placeholder-val="{{ false }}">
+<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"></path></svg>
+</sc-if>
+</button>
+</li>
+</sc-for>
+</ul>
+</div>
+
+<div style="position: absolute; left: 560px; top: 140px; width: 800px; height: 640px; transform: perspective(1500px) rotateX(42deg); transform-origin: 50% 100%">
+<div style="position: absolute; left: 70px; top: 120px; width: 660px; height: 560px; border-radius: 50%; background: radial-gradient(closest-side, rgba(91,22,38,0.10), rgba(91,22,38,0))"></div>
+<svg style="position: absolute; left: 0; top: 0" width="800" height="640" viewBox="0 0 800 640" aria-hidden="true">
+<path d="{{arcPath}}" fill="none" stroke="#E9C4C8" stroke-width="44" stroke-linecap="round" opacity="{{gumOpacity}}"></path>
+</svg>
+<sc-for list="{{teeth}}" as="t" hint-placeholder-count="14">
+<div style="{{t.style}}">
+<sc-if value="{{t.bracket}}" hint-placeholder-val="{{ false }}">
+<span style="{{t.bracketStyle}}"></span>
+</sc-if>
+</div>
+</sc-for>
+<svg style="position: absolute; left: 0; top: 0; pointer-events: none" width="800" height="640" viewBox="0 0 800 640" aria-hidden="true">
+<path d="{{arcPath}}" fill="none" stroke="{{vinho}}" stroke-width="2.5" opacity="{{wireOpacity}}"></path>
+</svg>
+</div>
+
+<div style="position: absolute; left: 790px; top: 500px; width: 340px; text-align: center">
+<div style="font-size: 11px; letter-spacing: 0.22em; text-transform: uppercase; color: #6E6063">{{active.num}} / 06</div>
+<div style="margin-top: 10px; font-family: 'Instrument Serif', serif; font-style: italic; font-size: 40px; line-height: 1.05; color: {{vinho}}">{{active.nome}}</div>
+<p style="margin: 12px auto 0; width: 300px; font-size: 15px; line-height: 1.55; color: #5E5154">{{active.desc}}</p>
+<a href="#" style="margin-top: 14px; display: inline-flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 600; text-decoration: none; color: {{vinho}}">Conheça os especialistas
+<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"></path></svg></a>
+</div>
+
+<nav aria-label="Progresso da página" style="position: absolute; right: 30px; top: 330px; display: flex; flex-direction: column; gap: 18px; font-size: 11px; color: #9A8C8F; align-items: flex-end">
+<span style="display: flex; align-items: center; gap: 8px">00<span style="display: block; width: 10px; height: 1px; background: #C9BBBE"></span></span>
+<span style="display: flex; align-items: center; gap: 8px">01<span style="display: block; width: 10px; height: 1px; background: #C9BBBE"></span></span>
+<span style="display: flex; align-items: center; gap: 8px; color: {{vinho}}; font-weight: 600">02<span style="display: block; width: 22px; height: 1px; background: {{vinho}}"></span></span>
+<span style="display: flex; align-items: center; gap: 8px">03<span style="display: block; width: 10px; height: 1px; background: #C9BBBE"></span></span>
+<span style="display: flex; align-items: center; gap: 8px">04<span style="display: block; width: 10px; height: 1px; background: #C9BBBE"></span></span>
+</nav>
+
+<a href="#" style="position: absolute; right: 32px; bottom: 30px; height: 54px; padding: 0 22px 0 18px; border-radius: 999px; background: #FFFFFF; color: {{vinho}}; border: 1px solid #E6DCD9; box-shadow: 0 10px 30px -12px rgba(62,13,24,0.35); display: flex; align-items: center; gap: 10px; font-size: 14px; font-weight: 600; text-decoration: none">
+<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20.5 11.6a8.6 8.6 0 0 1-12.6 7.6L3.5 20.5l1.4-4.2a8.6 8.6 0 1 1 15.6-4.7z"></path><path d="M9.2 8.6c.2 2.9 2.4 5.3 5.4 5.9l1.1-1.3 1.7.9"></path></svg>
+WhatsApp</a>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"vinho":{"editor":"color","default":"#5B1626","options":["#5B1626","#7A2438","#2F3B52","#3F5A4C"]},"$preview":{"width":1440,"height":900}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { picked: 'implanto' };
+  }
+  renderVals() {
+    const vinho = this.props.vinho ?? '#5B1626';
+    const all = [0,1,2,3,4,5,6,7,8,9,10,11,12,13];
+    const data = [
+      { id: 'orto', nome: 'Ortodontia', desc: 'Aparelhos fixos, alinhadores transparentes e acompanhamento do crescimento facial.', hi: all, wire: true },
+      { id: 'implanto', nome: 'Implantodontia', desc: 'Reposição de dentes perdidos com implantes, do planejamento à manutenção.', hi: [1, 12] },
+      { id: 'endo', nome: 'Endodontia', desc: 'Tratamento de canal para aliviar a dor e preservar o dente natural.', hi: [3] },
+      { id: 'perio', nome: 'Periodontia', desc: 'Saúde da gengiva: prevenção, raspagem e controle de sangramentos.', hi: all, gum: true },
+      { id: 'ped', nome: 'Odontopediatria', desc: 'Atendimento acolhedor para bebês, crianças e adolescentes.', hi: [5, 6, 7, 8] },
+      { id: 'est', nome: 'Estética e prótese', desc: 'Lentes de contato dental, clareamento e reabilitação do sorriso.', hi: [4, 5, 6, 7, 8, 9] }
+    ];
+    const picked = this.state.picked;
+    const specs = data.map((d, i) => {
+      const active = d.id === picked;
+      return {
+        num: String(i + 1).padStart(2, '0'),
+        nome: d.nome,
+        desc: d.desc,
+        active: active,
+        pick: () => this.setState({ picked: d.id }),
+        btnStyle: 'width: 100%; height: 58px; border: 0; background: transparent; padding: 0; display: flex; align-items: center; gap: 14px; cursor: pointer; font-family: \'Instrument Serif\', serif; font-size: 26px; color: ' + (active ? vinho : '#1F1719')
+      };
+    });
+    const act = data.find((d) => d.id === picked) || data[1];
+    const activeSpec = specs[data.indexOf(act)];
+
+    const cx = 400, cy = 470, a = 290, b = 330;
+    const widths = [74, 72, 58, 56, 50, 44, 54, 54, 44, 50, 56, 58, 72, 74];
+    const ratio = [0.9, 0.9, 0.88, 0.88, 0.95, 0.72, 0.7, 0.7, 0.72, 0.95, 0.88, 0.88, 0.9, 0.9];
+    const hiSet = {};
+    act.hi.forEach((k) => { hiSet[k] = true; });
+    const teeth = widths.map((w, i) => {
+      const deg = -12 + i * (204 / 13);
+      const th = deg * Math.PI / 180;
+      const x = cx + a * Math.cos(th);
+      const y = cy - b * Math.sin(th);
+      const h = Math.round(w * ratio[i]);
+      const hi = !!hiSet[i];
+      const isImplant = act.id === 'implanto' && hi;
+      const bg = isImplant
+        ? 'radial-gradient(circle at 36% 30%, #FFFFFF 0%, #F3E3DA 40%, #D8BFAF 80%, #B39383 100%)'
+        : 'radial-gradient(circle at 36% 30%, #FFFFFF 0%, #F6EFEC 42%, #DCCAC6 80%, #B3999A 100%)';
+      const ring = hi ? ', 0 0 0 3px ' + vinho : '';
+      const style = 'position: absolute; box-sizing: border-box; left: ' + (x - w / 2).toFixed(1) + 'px; top: ' + (y - h / 2).toFixed(1) + 'px; width: ' + w + 'px; height: ' + h + 'px; border-radius: 46% 46% 42% 42%; background: ' + bg + '; box-shadow: 0 16px 18px -10px rgba(62,13,24,0.45)' + ring + '; transform: rotate(' + (90 - deg).toFixed(1) + 'deg); opacity: ' + (hi ? 1 : 0.42) + '; display: flex; align-items: center; justify-content: center';
+      return {
+        style: style,
+        bracket: !!act.wire,
+        bracketStyle: 'display: block; width: 10px; height: 8px; border-radius: 2px; background: ' + vinho
+      };
+    });
+    const pts = [];
+    for (let s = 0; s <= 40; s++) {
+      const deg = -12 + s * (204 / 40);
+      const th = deg * Math.PI / 180;
+      pts.push((cx + a * Math.cos(th)).toFixed(1) + ' ' + (cy - b * Math.sin(th)).toFixed(1));
+    }
+    return {
+      vinho: vinho,
+      specs: specs,
+      active: activeSpec,
+      teeth: teeth,
+      arcPath: 'M' + pts.join(' L'),
+      wireOpacity: act.wire ? 1 : 0,
+      gumOpacity: act.gum ? 0.85 : 0
+    };
+  }
+}
+</script>
+</body>
+</html>

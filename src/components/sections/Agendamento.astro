@@ -11,8 +11,10 @@ interface Props {
   numero?: string | undefined;
   tratamento?: string;
   idPrefix?: string;
+  /** na página de contato o título é o h1 */
+  h1?: boolean;
 }
-const { numero, tratamento, idPrefix = 'ag' } = Astro.props;
+const { numero, tratamento, idPrefix = 'ag', h1 = false } = Astro.props;
 const { c } = site;
 const principal = c.unidades[0]!;
 const horarios = principal.horarios.map((h) => `${h.dias} ${h.horas}`).join(' · ');
@@ -22,7 +24,7 @@ const horarios = principal.horarios.map((h) => `${h.dias} ${h.horas}`).join(' ·
   <div class="ag__inner">
     <div class="ag__copy">
       <Eyebrow numero={numero} texto="Agendamento" />
-      <Title id={`${idPrefix}-title`} class="ag__title" text={c.agendamento.titulo} data-reveal="title" />
+      <Title as={h1 ? 'h1' : 'h2'} id={`${idPrefix}-title`} class="ag__title" text={c.agendamento.titulo} data-reveal={h1 ? undefined : 'title'} />
       <p class="ag__text">{c.agendamento.texto}</p>
       <WaLink class="ag__cta" mensagem={tratamento ? `Olá! Gostaria de agendar uma avaliação para ${tratamento}.` : undefined}>
         <span><Icon name="whatsapp" size={22} />Agendar pelo WhatsApp</span>
@@ -76,7 +78,7 @@ const horarios = principal.horarios.map((h) => `${h.dias} ${h.horas}`).join(' ·
   .ag__inner {
     max-width: var(--max);
     margin-inline: auto;
-    padding: clamp(120px, 10vw, 168px) var(--gutter) clamp(72px, 6vw, 96px);
+    padding: clamp(120px, 10vw, 168px) var(--gutter-r) clamp(72px, 6vw, 96px) var(--gutter);
     display: grid;
     grid-template-columns: minmax(0, 560px) minmax(0, 580px);
     justify-content: space-between;

@@ -13,7 +13,7 @@ const base = siteUrl();
   description={`Solicite seu horário na ${site.c.marca.nome} pelo WhatsApp. ${site.c.agendamento.texto}`}
   jsonLd={[breadcrumbLd([{ nome: 'Início', url: `${base}/` }, { nome: 'Contato', url: `${base}/contato/` }])]}
 >
-  <Agendamento idPrefix="ct" />
+  <Agendamento idPrefix="ct" h1 />
   {site.ativo('unidades') && <div class="container page"><Unidades /></div>}
 </BaseLayout>
 
