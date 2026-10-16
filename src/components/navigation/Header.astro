@@ -23,7 +23,7 @@ const pillNav = nav.length > 5 ? nav.filter((n) => !n.secundario) : nav;
 <header class="hdr" data-header data-home={home ? '1' : undefined}>
   <div class="hdr-full" data-header-full>
     <div class="hdr-full__inner">
-      <a href="/" class="hdr__brand" aria-label={`${site.c.marca.nome} — início`}>
+      <a href="/" class="hdr__brand">
         <Wordmark size="lg" descritor />
       </a>
       <nav aria-label="Principal" class="hdr-full__nav">
@@ -45,7 +45,7 @@ const pillNav = nav.length > 5 ? nav.filter((n) => !n.secundario) : nav;
   </div>
 
   <div class="hdr-pill" data-header-pill inert>
-    <a href="/" class="hdr__brand" aria-label={`${site.c.marca.nome} — início`}>
+    <a href="/" class="hdr__brand">
       <Wordmark size="md" />
     </a>
     <nav aria-label="Principal (compacto)" class="hdr-pill__nav">
@@ -62,7 +62,7 @@ const pillNav = nav.length > 5 ? nav.filter((n) => !n.secundario) : nav;
 
 <dialog id="menu-dialog" class="menu" aria-label="Menu" data-menu>
   <div class="menu__top">
-    <a href="/" class="hdr__brand" aria-label={`${site.c.marca.nome} — início`} data-menu-link>
+    <a href="/" class="hdr__brand" data-menu-link>
       <Wordmark size="md" />
     </a>
     <button type="button" class="hdr__menu-btn" aria-label="Fechar menu" data-menu-close>

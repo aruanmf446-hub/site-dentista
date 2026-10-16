@@ -39,7 +39,8 @@ const P =
 </div>
 
 <style>
-  .tooth-svg {
+  /* :where() = especificidade zero: quem usa o componente define a posição */
+  :where(.tooth-svg) {
     position: relative;
   }
   .tooth-svg svg {

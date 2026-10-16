@@ -47,7 +47,8 @@ const P =
 </div>
 
 <style>
-  .tooth-layers {
+  /* :where() = especificidade zero: quem usa o componente define a posição */
+  :where(.tooth-layers) {
     position: relative;
   }
   .tooth-layers svg {

@@ -36,15 +36,17 @@
 
   /* Escalas fluidas (390 → 1440) */
   --fs-hero: clamp(3.125rem, 1.375rem + 5vw, 5.875rem); /* 50 → 94 */
-  --fs-display: clamp(2.5rem, 1.15rem + 3.6vw, 4.875rem); /* 40 → 78 */
-  --fs-h2: clamp(2.25rem, 1.6rem + 1.55vw, 3.625rem); /* 36 → 58 */
-  --fs-h2-sm: clamp(2rem, 1.55rem + 1.15vw, 2.75rem); /* 32 → 44 */
-  --fs-h3: clamp(1.375rem, 1.25rem + 0.3vw, 1.5625rem); /* 22 → 25 */
-  --fs-lead: clamp(0.9375rem, 0.88rem + 0.25vw, 1.125rem); /* 15 → 18 */
-  --fs-body: clamp(0.9375rem, 0.9rem + 0.12vw, 1.0625rem); /* 15 → 17 */
+  --fs-display: clamp(2.5rem, 1.618rem + 3.619vw, 4.875rem); /* 40 → 78 */
+  --fs-h2: clamp(2.25rem, 1.739rem + 2.095vw, 3.625rem); /* 36 → 58 */
+  --fs-h2-sm: clamp(2rem, 1.721rem + 1.143vw, 2.75rem); /* 32 → 44 */
+  --fs-h3: clamp(1.375rem, 1.305rem + 0.2857vw, 1.562rem); /* 22 → 25 */
+  --fs-lead: clamp(0.9375rem, 0.8679rem + 0.2857vw, 1.125rem); /* 15 → 18 */
+  --fs-body: clamp(0.9375rem, 0.8911rem + 0.1905vw, 1.062rem); /* 15 → 17 */
+  --fs-h2-md: clamp(2.25rem, 1.832rem + 1.714vw, 3.375rem); /* equipe, unidades, galeria */
+  --fs-quote: clamp(1.75rem, 1.379rem + 1.524vw, 2.75rem);
   --fs-small: 0.875rem;
   --fs-xs: 0.8125rem;
-  --fs-eyebrow: clamp(0.6875rem, 0.66rem + 0.08vw, 0.75rem); /* 11 → 12 */
+  --fs-eyebrow: clamp(0.6875rem, 0.6643rem + 0.09524vw, 0.75rem); /* 11 → 12 */
 
   /* Espaço */
   --gutter: clamp(20px, 6.667vw, 96px);
@@ -68,6 +70,6 @@
 @media (max-width: 899px) {
   :root {
     --header-h: 64px;
-    --mobile-bar-h: calc(76px + env(safe-area-inset-bottom, 0px));
+    --mobile-bar-h: calc(80px + env(safe-area-inset-bottom, 0px));
   }
 }

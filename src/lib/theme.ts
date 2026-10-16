@@ -106,7 +106,8 @@ export function buildTheme(primaria: string, secundaria?: string): Theme {
 }
 
 export function themeToCss(theme: Theme): string {
-  return `:root{${Object.entries(theme.vars)
+  // html:root vence o :root de tokens.css independentemente da ordem no <head>
+  return `html:root{${Object.entries(theme.vars)
     .map(([k, v]) => `${k}:${v}`)
     .join(';')}}`;
 }

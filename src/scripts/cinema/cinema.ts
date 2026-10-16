@@ -192,10 +192,9 @@ export async function initCinema(): Promise<void> {
     elevation: 4,
     dark: 1,
     idle: 1,
-    toothRise: heroVisual === 'foto' ? -1.6 : 0,
+    toothRise: heroVisual === 'foto' ? -3 : 0,
     shadow: heroVisual === 'foto' ? 0 : 1,
   });
-  if (heroVisual === 'foto') state.toothRise = -1.6;
 
   /* ===== 00 · Hero → próxima cena ===== */
   {
@@ -214,7 +213,9 @@ export async function initCinema(): Promise<void> {
     if (nextAfterHero === 'tratamentos') {
       Cn({ anchor: 1 }, h0, L, 'power1.inOut');
       Cn({ arch: 1 }, h0 + 0.04 * L, 0.92 * L, 'power2.inOut');
-      S({ toothRotY: -20, toothRotZ: -6, elevation: 2, idle: 0.35, toothRise: 0, shadow: 1 }, h0, L);
+      S({ toothRotY: -20, toothRotZ: -6, elevation: 2, idle: 0.35 }, h0, L);
+      // hero com foto: o dente sobe para a cena a partir de baixo
+      S({ toothRise: 0, shadow: 1 }, h0 + (heroVisual === 'foto' ? 0.3 : 0) * L, (heroVisual === 'foto' ? 0.7 : 1) * L, 'power2.out');
     } else if (nextAfterHero === 'especialidades') {
       Cn({ archAlpha: 0 }, h0 + 0.1 * L, 0.45 * L);
       S({ idle: 0, toothRise: 0, toothRotZ: 0 }, h0, 0.4 * L);
@@ -337,7 +338,7 @@ export async function initCinema(): Promise<void> {
       onTime();
     },
     onToggle: (self) => {
-      inView = self.isActive || self.progress < 1;
+      // a visibilidade real vem do IntersectionObserver; aqui só o tom de fundo
       if (!self.isActive) {
         delete html.dataset.surface;
         document.dispatchEvent(new Event('surfacechange'));
@@ -345,6 +346,7 @@ export async function initCinema(): Promise<void> {
     },
   });
   tl.eventCallback('onUpdate', onTime);
+  html.classList.add('cinema-ready');
 
   /* ---------- navegação: âncoras, foco e cliques na lista ---------- */
   const scrollTop = () => window.scrollY + root.getBoundingClientRect().top;
