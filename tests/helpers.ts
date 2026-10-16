@@ -59,3 +59,47 @@ export async function cinemaState(page: Page) {
     return { ...c.state, time: c.tl.time(), anchor: c.cine.anchor, shape: c.cine.arch, cam: c.stage.camera.position.toArray() as number[] };
   });
 }
+
+/**
+ * Estado real dos objetos Three.js (não só das variáveis da timeline) e uma
+ * assinatura dos pixels do canvas WebGL lida logo após um quadro desenhado.
+ */
+export async function sceneObjects(page: Page) {
+  return page.evaluate(() => {
+    const c = (window as any).__cinema;
+    const s = c.stage;
+    s.render();
+    const gl: WebGLRenderingContext = s.renderer.getContext();
+    const w = gl.drawingBufferWidth;
+    const h = gl.drawingBufferHeight;
+    const px = new Uint8Array(4);
+    const sig: number[] = [];
+    let opaque = 0;
+    for (let j = 1; j < 16; j++)
+      for (let i = 1; i < 16; i++) {
+        gl.readPixels(Math.floor((i / 16) * w), Math.floor((j / 16) * h), 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, px);
+        sig.push(px[0]! + px[1]! + px[2]!);
+        if (px[3]! > 8) opaque++;
+      }
+    const v = (o: any) => o.getWorldPosition(new (o.position.constructor as any)()).toArray().map((x: number) => +x.toFixed(4));
+    return {
+      toothPos: v(s.toothRoot) as number[],
+      toothRot: [s.toothRoot.rotation.x, s.toothRoot.rotation.y, s.toothRoot.rotation.z].map((x: number) => +x.toFixed(4)),
+      enamelY: +s.enamelPivot.position.y.toFixed(4),
+      cutVisible: !!s.cutGroup.visible,
+      wholeVisible: !!s.wholeGroup.visible,
+      arcadeVisible: !!s.arcade.visible,
+      archTeethVisible: (s.archTeeth as any[]).filter((t) => t.group.visible).length,
+      cam: s.camera.position.toArray().map((x: number) => +x.toFixed(4)) as number[],
+      opaque,
+      sig,
+    };
+  });
+}
+
+/** Fração de amostras de pixel que mudaram de forma perceptível entre duas assinaturas. */
+export function sigDiff(a: number[], b: number[]) {
+  let n = 0;
+  for (let i = 0; i < a.length; i++) if (Math.abs(a[i]! - b[i]!) > 24) n++;
+  return n / a.length;
+}

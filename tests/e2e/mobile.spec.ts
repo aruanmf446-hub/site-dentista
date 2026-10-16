@@ -83,9 +83,13 @@ test.describe('mobile 390×844', () => {
     expect(footerBottom).toBeLessThanOrEqual(barTop + 1);
   });
 
-  test('abas por camada: ARIA, setas do teclado e troca da vista 3D', async ({ page }) => {
+  // As abas por camada são a alternativa acessível à sequência (movimento reduzido);
+  // com movimento normal, o celular roda o cinema compacto (tests/e2e/scene.spec.ts).
+  test('movimento reduzido — abas por camada: ARIA, setas do teclado e troca da vista 3D', async ({ page }) => {
     const errors = trackErrors(page);
+    await page.emulateMedia({ reducedMotion: 'reduce' });
     await page.goto(url('alva-demo', '/'));
+    await expect(page.locator('html')).not.toHaveClass(/is-cinema/);
     await waitScene(page);
     const tabs = page.locator('[data-layer-tabs] [role="tab"]');
     await expect(tabs).toHaveCount(3);
