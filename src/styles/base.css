@@ -231,3 +231,16 @@ em.destaque {
     transition-duration: 0.01ms !important;
   }
 }
+
+/*
+ * Antes de o módulo de animação iniciar, o conteúdo que será revelado fica
+ * oculto (evita "piscar"). Se o JS falhar, o <head> remove .motion em 4 s.
+ */
+html.motion:not(.motion-ready) :not(.cinema *)[data-reveal],
+html.motion:not(.motion-ready) :not(.cinema *)[data-eyebrow] {
+  opacity: 0;
+}
+.split-line {
+  padding-bottom: 0.06em;
+  margin-bottom: -0.06em;
+}

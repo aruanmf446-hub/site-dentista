@@ -1,0 +1,364 @@
+---
+/**
+ * Página própria de cada tratamento (SEO local). O conteúdo vem só da
+ * configuração do tratamento — nada é gerado ou repetido automaticamente.
+ */
+import type { GetStaticPaths } from 'astro';
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import PageHeader from '@/components/layout/PageHeader.astro';
+import ArchPhoto from '@/components/ui/ArchPhoto.astro';
+import Icon from '@/components/ui/Icon.astro';
+import WaLink from '@/components/ui/WaLink.astro';
+import Eyebrow from '@/components/ui/Eyebrow.astro';
+import Faq from '@/components/sections/Faq.astro';
+import Agendamento from '@/components/sections/Agendamento.astro';
+import site, { siteUrl } from '@/lib/site';
+import { breadcrumbLd } from '@/lib/seo';
+import clinic from '@/config/clinic.config';
+import type { Tratamento } from '@/config/clinic.schema';
+
+export const getStaticPaths = (() =>
+  clinic.tratamentos.map((t, i) => ({ params: { slug: t.slug }, props: { t, i } }))) satisfies GetStaticPaths;
+
+interface Props {
+  t: Tratamento;
+  i: number;
+}
+const { t, i } = Astro.props;
+const { c } = site;
+const base = siteUrl();
+const especialidade = c.especialidades.find((e) => e.slug === t.especialidade);
+const profs = especialidade
+  ? especialidade.profissionais.map((p) => c.equipe.find((e) => e.slug === p)).filter((p): p is NonNullable<typeof p> => !!p)
+  : [];
+const outros = c.tratamentos.filter((x) => x.slug !== t.slug);
+const proximo = c.tratamentos[(i + 1) % c.tratamentos.length]!;
+const mensagem = `Olá! Gostaria de saber mais sobre ${t.nome.toLowerCase()} e agendar uma avaliação.`;
+const descricao = t.seo.descricao ?? t.resumo;
+---
+
+<BaseLayout
+  path={`/tratamentos/${t.slug}/`}
+  title={t.seo.titulo ?? t.nome}
+  description={descricao}
+  ogType="article"
+  jsonLd={[
+    breadcrumbLd([
+      { nome: 'Início', url: `${base}/` },
+      { nome: 'Tratamentos', url: `${base}/tratamentos/` },
+      { nome: t.nome, url: `${base}/tratamentos/${t.slug}/` },
+    ]),
+  ]}
+>
+  <article class="trp">
+    <div class="trp__top container">
+      <PageHeader
+        trilha={[{ nome: 'Início', href: '/' }, { nome: 'Tratamentos', href: '/tratamentos/' }, { nome: t.nome }]}
+        rotulo={especialidade ? `Tratamento · ${especialidade.nome}` : 'Tratamento'}
+        titulo={t.nome}
+        texto={t.resumo}
+      >
+        <div class="trp__ctas">
+          <a href="#agendamento" class="btn btn--primary btn--lg">Agendar avaliação <Icon name="arrow-right" class="icon-shift" /></a>
+          <WaLink class="btn btn--outline btn--lg" mensagem={mensagem}><Icon name="whatsapp" />Tirar dúvidas</WaLink>
+        </div>
+      </PageHeader>
+      <div class="trp__visual">
+        <span class="trp__outline" aria-hidden="true"></span>
+        <ArchPhoto foto={t.foto} rotulo={`[Foto real — ${t.nome.toLowerCase()}]`} class="trp__photo" eager sizes="(max-width: 899px) 80vw, 420px" />
+      </div>
+    </div>
+
+    <div class="trp__body container">
+      <section class="trp__block" aria-labelledby="sobre-t">
+        <Eyebrow texto="Sobre o tratamento" />
+        <h2 id="sobre-t" class="sr-only">Sobre o tratamento</h2>
+        <div class="trp__prose">
+          {t.descricao.map((p) => <p data-reveal="text">{p}</p>)}
+          {t.duracao && <p class="trp__meta"><strong>Duração aproximada:</strong> {t.duracao}</p>}
+        </div>
+      </section>
+
+      {
+        t.etapas.length > 0 && (
+          <section class="trp__block" aria-labelledby="etapas-t">
+            <Eyebrow texto="Como funciona" />
+            <h2 id="etapas-t" class="sr-only">Como funciona</h2>
+            <ol role="list" class="trp__steps" data-reveal="rows">
+              {t.etapas.map((e, k) => (
+                <li>
+                  <span class="trp__step-n">{String(k + 1).padStart(2, '0')}</span>
+                  <span class="trp__step-t">{e.titulo}</span>
+                  <span class="trp__step-x">{e.texto}</span>
+                </li>
+              ))}
+            </ol>
+          </section>
+        )
+      }
+
+      {
+        t.indicacoes.length > 0 && (
+          <section class="trp__block" aria-labelledby="ind-t">
+            <Eyebrow texto="Quando é indicado" />
+            <h2 id="ind-t" class="sr-only">Quando é indicado</h2>
+            <ul role="list" class="rule-list trp__list" data-reveal="rows">
+              {t.indicacoes.map((x) => <li>{x}</li>)}
+            </ul>
+          </section>
+        )
+      }
+
+      {
+        profs.length > 0 && site.ativo('equipe') && (
+          <section class="trp__block" aria-labelledby="prof-t">
+            <Eyebrow texto="Quem acompanha" />
+            <h2 id="prof-t" class="sr-only">Quem acompanha</h2>
+            <ul role="list" class="trp__profs">
+              {profs.map((p) => (
+                <li>
+                  <span class="trp__prof-name">{p.pagina && p.bio.length ? <a href={`/equipe/${p.slug}/`}>{p.nome}</a> : p.nome}</span>
+                  <span class="trp__prof-meta">{p.especialidade} · {p.cro}</span>
+                </li>
+              ))}
+            </ul>
+          </section>
+        )
+      }
+
+      <p class="trp__note">
+        Conteúdo informativo. A indicação de qualquer tratamento depende de avaliação clínica individual.
+        {site.demo && ' Texto de exemplo do template: deve ser revisado pelo responsável técnico da clínica.'}
+      </p>
+    </div>
+
+    {t.faq.length > 0 && <div class="container trp__faq"><Faq itens={t.faq} titulo="Dúvidas sobre o *tratamento.*" id="faq-tratamento" /></div>}
+
+    <nav class="container trp__next" aria-label="Outros tratamentos">
+      <a href={`/tratamentos/${proximo.slug}/`} class="trp__next-link">
+        <span class="trp__next-label">Próximo tratamento</span>
+        <span class="trp__next-name">{proximo.nome}<Icon name="arrow-right" size={24} /></span>
+      </a>
+      {
+        outros.length > 1 && (
+          <ul role="list" class="trp__others">
+            {outros.slice(0, 8).map((o) => (
+              <li>
+                <a href={`/tratamentos/${o.slug}/`}>{o.nome}</a>
+              </li>
+            ))}
+          </ul>
+        )
+      }
+    </nav>
+  </article>
+  <Agendamento tratamento={t.nome} idPrefix="tr" />
+</BaseLayout>
+
+<style>
+  .trp__top {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 380px);
+    gap: 64px;
+    align-items: start;
+    padding-right: var(--gutter-r);
+  }
+  .trp__ctas {
+    margin-top: 32px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+  .trp__visual {
+    position: relative;
+    padding: 18px 18px 0;
+    margin-top: clamp(96px, 10vw, 150px);
+  }
+  .trp__outline {
+    position: absolute;
+    inset: 0;
+    border: 1px solid var(--c-arch-line);
+    border-bottom: 0;
+    border-radius: 9999px 9999px 0 0;
+  }
+  .trp__photo {
+    aspect-ratio: 420 / 560;
+  }
+  .trp__body {
+    margin-top: var(--section-gap);
+    padding-right: var(--gutter-r);
+    display: grid;
+    gap: 72px;
+  }
+  .trp__block {
+    display: grid;
+    grid-template-columns: minmax(0, 280px) minmax(0, 760px);
+    gap: 40px;
+    align-items: start;
+  }
+  .trp__block > :global(.eyebrow) {
+    padding-top: 8px;
+  }
+  .trp__prose p {
+    font-size: 18px;
+    line-height: 1.7;
+    color: var(--c-ink-2);
+  }
+  .trp__prose p + p {
+    margin-top: 18px;
+  }
+  .trp__meta {
+    font-size: 15px !important;
+    color: var(--c-text) !important;
+  }
+  .trp__steps {
+    margin: 0;
+    padding: 0;
+    border-top: 1px solid var(--c-line);
+  }
+  .trp__steps li {
+    display: grid;
+    grid-template-columns: 40px minmax(0, 220px) minmax(0, 1fr);
+    gap: 20px;
+    padding: 22px 0;
+    border-bottom: 1px solid var(--c-line);
+    align-items: baseline;
+  }
+  .trp__step-n {
+    font-size: 12px;
+    color: var(--c-muted);
+  }
+  .trp__step-t {
+    font-family: var(--f-serif);
+    font-size: 24px;
+    line-height: 1.15;
+  }
+  .trp__step-x {
+    font-size: 15px;
+    color: var(--c-text);
+  }
+  .trp__list li {
+    padding: 16px 0;
+    font-size: 16px;
+  }
+  .trp__profs {
+    margin: 0;
+    padding: 0;
+    border-top: 1px solid var(--c-line);
+  }
+  .trp__profs li {
+    display: flex;
+    justify-content: space-between;
+    gap: 16px;
+    flex-wrap: wrap;
+    padding: 18px 0;
+    border-bottom: 1px solid var(--c-line);
+  }
+  .trp__prof-name {
+    font-family: var(--f-serif);
+    font-size: 24px;
+  }
+  .trp__prof-name a {
+    color: inherit;
+  }
+  .trp__prof-meta {
+    font-size: 13px;
+    color: var(--c-muted);
+  }
+  .trp__note {
+    max-width: 760px;
+    margin-left: calc(280px + 40px);
+    font-size: 13px;
+    color: var(--c-muted);
+    border-left: 1px solid var(--c-line);
+    padding-left: 16px;
+  }
+  .trp__faq {
+    margin-top: var(--section-gap);
+    padding-right: var(--gutter-r);
+  }
+  .trp__next {
+    margin-top: var(--section-gap);
+    padding-right: var(--gutter-r);
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: 48px;
+    align-items: end;
+    border-top: 1px solid var(--c-line);
+    padding-top: 48px;
+  }
+  .trp__next-link {
+    color: var(--c-ink);
+    text-decoration: none;
+  }
+  .trp__next-label {
+    display: block;
+    font-size: 12px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--c-muted);
+  }
+  .trp__next-name {
+    display: inline-flex;
+    align-items: center;
+    gap: 16px;
+    margin-top: 12px;
+    font-family: var(--f-serif);
+    font-size: clamp(34px, 3vw + 12px, 56px);
+    line-height: 1.05;
+  }
+  .trp__next-link:hover .trp__next-name {
+    color: var(--c-primary);
+  }
+  .trp__others {
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px 22px;
+    font-size: 14px;
+  }
+  .trp__others a {
+    color: var(--c-text);
+    display: inline-flex;
+    min-height: 32px;
+    align-items: center;
+  }
+  @media (max-width: 1023px) {
+    .trp__block {
+      grid-template-columns: 1fr;
+      gap: 20px;
+    }
+    .trp__note {
+      margin-left: 0;
+    }
+  }
+  @media (max-width: 899px) {
+    .trp__top {
+      grid-template-columns: 1fr;
+      gap: 40px;
+      padding-right: var(--gutter);
+    }
+    .trp__visual {
+      width: min(320px, 80%);
+      margin-top: 0;
+    }
+    .trp__body,
+    .trp__faq,
+    .trp__next {
+      padding-right: var(--gutter);
+    }
+    .trp__next {
+      grid-template-columns: 1fr;
+    }
+    .trp__steps li {
+      grid-template-columns: 28px minmax(0, 1fr);
+    }
+    .trp__step-x {
+      grid-column: 2;
+    }
+    .trp__prose p {
+      font-size: 16px;
+    }
+  }
+</style>

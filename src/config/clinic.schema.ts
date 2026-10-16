@@ -81,7 +81,7 @@ export const unidadeSchema = z.object({
   telefone: z.string().optional(),
   email: z.string().optional(),
   /** Link de rota (Google Maps, Waze…). Sem ele, o botão "Como chegar" não aparece. */
-  mapa: z.string().url().optional(),
+  mapa: z.url().optional(),
   fotos: z.array(fotoSchema).default([]),
   /** Coordenadas opcionais para dados estruturados. */
   geo: z.object({ lat: z.number(), lng: z.number() }).optional(),
@@ -172,7 +172,7 @@ export const depoimentoSchema = z.object({
   autor: z.string(),
   /** Origem verificável, ex.: "Avaliação no Google" */
   fonte: z.string(),
-  link: z.string().url().optional(),
+  link: z.url().optional(),
   data: z.string().optional(),
   /** Obrigatório true para publicar em produção. */
   consentimento: z.boolean(),
@@ -196,7 +196,7 @@ export const clinicSchema = z.object({
   site: z.object({
     /** 'demonstracao' aceita placeholders e marca o site como não indexável. */
     modo: z.enum(['demonstracao', 'producao']),
-    url: z.string().url(),
+    url: z.url(),
     titulo: z.string(),
     descricao: z.string(),
     imagemCompartilhamento: imagemSchema.optional(),
@@ -228,11 +228,11 @@ export const clinicSchema = z.object({
     email: z.string().optional(),
     redes: z
       .object({
-        instagram: z.string().url().optional(),
-        facebook: z.string().url().optional(),
-        youtube: z.string().url().optional(),
-        tiktok: z.string().url().optional(),
-        linkedin: z.string().url().optional(),
+        instagram: z.url().optional(),
+        facebook: z.url().optional(),
+        youtube: z.url().optional(),
+        tiktok: z.url().optional(),
+        linkedin: z.url().optional(),
       })
       .default({}),
     mensagemPadrao: z.string().default('Olá! Gostaria de agendar uma avaliação.'),

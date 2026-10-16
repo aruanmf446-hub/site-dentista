@@ -1,0 +1,175 @@
+---
+/**
+ * /equipe/ (lista completa) e /equipe/<slug>/ (perfil, quando `pagina: true`).
+ * Não gera nada se o módulo Equipe estiver desligado.
+ */
+import type { GetStaticPaths } from 'astro';
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import PageHeader from '@/components/layout/PageHeader.astro';
+import Equipe from '@/components/sections/Equipe.astro';
+import CtaBand from '@/components/sections/CtaBand.astro';
+import ArchPhoto from '@/components/ui/ArchPhoto.astro';
+import Eyebrow from '@/components/ui/Eyebrow.astro';
+import site, { siteUrl, unidadeNome } from '@/lib/site';
+import { breadcrumbLd } from '@/lib/seo';
+import { rotaEquipeAtiva } from '@/lib/routes';
+import type { Profissional } from '@/config/clinic.schema';
+
+export const getStaticPaths = (() => {
+  if (!rotaEquipeAtiva()) return [];
+  return [
+    { params: { slug: undefined }, props: { p: null } },
+    ...site.equipeComPagina.map((p) => ({ params: { slug: p.slug }, props: { p } })),
+  ];
+}) satisfies GetStaticPaths;
+
+interface Props {
+  p: Profissional | null;
+}
+const { p } = Astro.props;
+const base = siteUrl();
+const especialidades = p ? site.c.especialidades.filter((e) => e.profissionais.includes(p.slug)) : [];
+const tratamentos = p
+  ? site.c.tratamentos.filter((t) => especialidades.some((e) => e.slug === t.especialidade))
+  : [];
+---
+
+{
+  !p ? (
+    <BaseLayout
+      path="/equipe/"
+      title="Equipe"
+      description={`Corpo clínico da ${site.c.marca.nome}.`}
+      jsonLd={[breadcrumbLd([{ nome: 'Início', url: `${base}/` }, { nome: 'Equipe', url: `${base}/equipe/` }])]}
+    >
+      <div class="container page">
+        <PageHeader trilha={[{ nome: 'Início', href: '/' }, { nome: 'Equipe' }]} rotulo="Corpo clínico" titulo="Quem cuida de *você.*" />
+        <div class="page__section">
+          <Equipe limite={999} />
+        </div>
+      </div>
+      <CtaBand />
+    </BaseLayout>
+  ) : (
+    <BaseLayout
+      path={`/equipe/${p.slug}/`}
+      title={p.nome}
+      description={`${p.nome} — ${p.especialidade}. ${p.cro}.`}
+      ogType="article"
+      jsonLd={[
+        breadcrumbLd([
+          { nome: 'Início', url: `${base}/` },
+          { nome: 'Equipe', url: `${base}/equipe/` },
+          { nome: p.nome, url: `${base}/equipe/${p.slug}/` },
+        ]),
+      ]}
+    >
+      <div class="container page prof">
+        <div class="prof__grid">
+          <div>
+            <PageHeader
+              trilha={[{ nome: 'Início', href: '/' }, { nome: 'Equipe', href: '/equipe/' }, { nome: p.nome }]}
+              rotulo={p.especialidade}
+              titulo={p.nome}
+              texto={`${p.cro}${p.unidades.length && site.multiUnidade ? ` · Atende em ${p.unidades.map(unidadeNome).join(' e ')}` : ''}`}
+            />
+            <div class="prof__bio">
+              {p.bio.map((b) => <p data-reveal="text">{b}</p>)}
+            </div>
+            {p.formacao.length > 0 && (
+              <div class="prof__block">
+                <Eyebrow texto="Formação" />
+                <ul role="list" class="rule-list prof__list" data-reveal="rows">
+                  {p.formacao.map((f) => <li>{f}</li>)}
+                </ul>
+              </div>
+            )}
+            {tratamentos.length > 0 && (
+              <div class="prof__block">
+                <Eyebrow texto="Tratamentos relacionados" />
+                <ul role="list" class="rule-list prof__list" data-reveal="rows">
+                  {tratamentos.map((t) => (
+                    <li>
+                      <a href={`/tratamentos/${t.slug}/`}>{t.nome}</a>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </div>
+          <div class="prof__visual">
+            <ArchPhoto foto={p.foto} rotulo="[Retrato do(a) dentista]" class="prof__photo" eager sizes="(max-width: 899px) 70vw, 400px" />
+          </div>
+        </div>
+      </div>
+      <CtaBand mensagem={`Olá! Gostaria de agendar uma consulta com ${p.nome}.`} />
+    </BaseLayout>
+  )
+}
+
+<style>
+  .page {
+    padding-right: var(--gutter-r);
+  }
+  .page__section {
+    margin-top: 72px;
+  }
+  .page__section :global(.equipe__head) {
+    display: none;
+  }
+  .prof__grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 400px);
+    gap: 72px;
+    align-items: start;
+  }
+  .prof__visual {
+    padding-top: clamp(112px, 12vw, 176px);
+  }
+  .prof__photo {
+    aspect-ratio: 400 / 520;
+  }
+  .prof__bio {
+    margin-top: 32px;
+    max-width: 640px;
+  }
+  .prof__bio p {
+    font-size: 17px;
+    line-height: 1.7;
+    color: var(--c-ink-2);
+  }
+  .prof__bio p + p {
+    margin-top: 14px;
+  }
+  .prof__block {
+    margin-top: 48px;
+    max-width: 640px;
+  }
+  .prof__list {
+    margin-top: 18px;
+  }
+  .prof__list li {
+    padding: 14px 0;
+  }
+  .prof__list a {
+    color: var(--c-ink);
+  }
+  @media (max-width: 899px) {
+    .page {
+      padding-right: var(--gutter);
+    }
+    .prof__grid {
+      grid-template-columns: 1fr;
+      gap: 32px;
+    }
+    .prof__visual {
+      padding-top: 0;
+      width: min(300px, 80%);
+      order: -1;
+      margin-top: 96px;
+    }
+    .prof__grid :global(.ph-head) {
+      padding-top: 0;
+    }
+  }
+</style>

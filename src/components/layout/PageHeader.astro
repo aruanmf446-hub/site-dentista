@@ -1,0 +1,82 @@
+---
+/** Abertura das páginas internas: trilha, rótulo, título e texto de apoio. */
+import Eyebrow from '@/components/ui/Eyebrow.astro';
+import Title from '@/components/ui/Title.astro';
+
+interface Props {
+  trilha: { nome: string; href?: string }[];
+  rotulo: string;
+  titulo: string;
+  texto?: string | undefined;
+}
+const { trilha, rotulo, titulo, texto } = Astro.props;
+---
+
+<header class="ph-head">
+  <nav aria-label="Trilha de navegação" class="ph-head__crumbs">
+    <ol role="list">
+      {
+        trilha.map((t, i) => (
+          <li>
+            {t.href && i < trilha.length - 1 ? <a href={t.href}>{t.nome}</a> : <span aria-current="page">{t.nome}</span>}
+          </li>
+        ))
+      }
+    </ol>
+  </nav>
+  <Eyebrow texto={rotulo} />
+  <Title as="h1" class="ph-head__title" text={titulo} />
+  {texto && <p class="ph-head__text">{texto}</p>}
+  <slot />
+</header>
+
+<style>
+  .ph-head {
+    padding-top: clamp(112px, 12vw, 176px);
+    max-width: 860px;
+  }
+  .ph-head__crumbs ol {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px 0;
+    margin: 0 0 28px;
+    padding: 0;
+    font-size: 13px;
+    color: var(--c-muted);
+  }
+  .ph-head__crumbs li + li::before {
+    content: '/';
+    margin: 0 10px;
+    color: var(--c-progress-rule);
+  }
+  .ph-head__crumbs a {
+    color: var(--c-muted);
+    text-decoration: none;
+  }
+  .ph-head__crumbs a:hover {
+    color: var(--c-ink);
+    text-decoration: underline;
+  }
+  .ph-head__title {
+    margin-top: 26px;
+    font-family: var(--f-serif);
+    font-size: clamp(2.75rem, 1.7rem + 3.4vw, 5rem);
+    line-height: 1;
+    letter-spacing: -0.015em;
+  }
+  .ph-head__text {
+    margin-top: 24px;
+    max-width: 560px;
+    font-size: var(--fs-lead);
+    line-height: 1.6;
+    color: var(--c-text);
+  }
+  @media (max-width: 899px) {
+    .ph-head {
+      padding-top: 96px;
+    }
+    .ph-head__title {
+      margin-top: 16px;
+    }
+  }
+</style>

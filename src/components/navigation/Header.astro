@@ -100,6 +100,8 @@ const pillNav = nav.length > 5 ? nav.filter((n) => !n.secundario) : nav;
   }
   .hdr a {
     text-decoration: none;
+  }
+  .hdr a:not(.btn) {
     color: var(--c-ink);
   }
   .hdr__brand {
@@ -326,7 +328,7 @@ const pillNav = nav.length > 5 ? nav.filter((n) => !n.secundario) : nav;
     align-items: center;
     justify-content: space-between;
   }
-  .menu__top a {
+  .menu__top a:not(.btn) {
     color: var(--c-ink);
     text-decoration: none;
   }

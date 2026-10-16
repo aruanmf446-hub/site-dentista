@@ -75,7 +75,6 @@ export class Stage3D {
   private gum!: THREE.Mesh;
   private glow!: THREE.Mesh;
   private archCenter = new THREE.Vector3();
-  private archRadius = 3;
   private archWidth = 6;
   private archDepth = 3.6;
   private presets: SpecPreset[] = [];
@@ -210,7 +209,6 @@ export class Stage3D {
     const zFar = -B - 0.35;
     const zNear = B * Math.sin(12 * DEG) + 0.45;
     this.archCenter.set(-slot.x, yBase + 0.15, -slot.z + (zFar + zNear) / 2);
-    this.archRadius = Math.max(A, B) * 1.15;
     this.archWidth = 2 * A + 1.0;
     this.archDepth = zNear - zFar;
 

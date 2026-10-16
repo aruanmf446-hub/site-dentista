@@ -1,0 +1,30 @@
+---
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import Agendamento from '@/components/sections/Agendamento.astro';
+import Unidades from '@/components/sections/Unidades.astro';
+import site, { siteUrl } from '@/lib/site';
+import { breadcrumbLd } from '@/lib/seo';
+const base = siteUrl();
+---
+
+<BaseLayout
+  path="/contato/"
+  title="Contato e agendamento"
+  description={`Solicite seu horário na ${site.c.marca.nome} pelo WhatsApp. ${site.c.agendamento.texto}`}
+  jsonLd={[breadcrumbLd([{ nome: 'Início', url: `${base}/` }, { nome: 'Contato', url: `${base}/contato/` }])]}
+>
+  <Agendamento idPrefix="ct" />
+  {site.ativo('unidades') && <div class="container page"><Unidades /></div>}
+</BaseLayout>
+
+<style>
+  .page {
+    padding-right: var(--gutter-r);
+    padding-bottom: var(--section-gap);
+  }
+  @media (max-width: 899px) {
+    .page {
+      padding-right: var(--gutter);
+    }
+  }
+</style>
