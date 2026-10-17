@@ -49,7 +49,7 @@ export async function scrollCinema(page: Page, p: number) {
       return Math.abs(c.st.progress - p) < 0.003 && Math.abs(c.tl.time() - c.st.progress * c.tl.duration()) < 0.01;
     },
     p,
-    { timeout: 60_000, polling: 150 },
+    { timeout: 120_000, polling: 150 },
   );
 }
 

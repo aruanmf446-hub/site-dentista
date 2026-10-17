@@ -11,10 +11,14 @@ const out = process.argv[3] && !process.argv[3].startsWith('--') ? process.argv[
 const shots = (process.argv.find((a) => a.startsWith('--shots=')) || '').split('=')[1];
 const TELAS = [
   { w: 390, h: 844, mobile: true },
+  { w: 375, h: 667, mobile: true },
   { w: 768, h: 1024, mobile: true },
   { w: 1024, h: 768 },
+  { w: 1260, h: 587 },
   { w: 1280, h: 800 },
+  { w: 1366, h: 650 },
   { w: 1440, h: 900 },
+  { w: 1536, h: 730 },
 ];
 // tempos (em "telas") — o fim é limitado à duração de cada variante
 const TEMPOS = [0, 0.3, 0.5, 0.8, 1.0, 1.3, 1.45, 1.6, 1.9, 2.2, 2.5, 2.65, 2.75, 2.85, 3.0, 3.15, 3.3, 3.5, 3.7, 4.1, 4.5, 5.0, 5.6, 6.2, 6.8, 7.4, 8.0, 8.6];

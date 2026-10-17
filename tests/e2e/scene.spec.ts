@@ -25,7 +25,8 @@ for (const perfil of PERFIS) {
   test.describe(`[${perfil.nome}]`, () => {
     test.use(perfil.use);
     test('cinema: câmera, corte, esmalte e arcada seguem a rolagem de 0 a 100% — e revertem de 100% a 0', async ({ page }) => {
-      test.setTimeout(300_000);
+      // GPU emulada por software: quadros de ~0,6 s + scrub de 1,2 s → cada ponto leva ~10–20 s
+      test.setTimeout(900_000);
       const errors = trackErrors(page);
       const compact = perfil.use.viewport.width < 900;
       await page.goto(url('alva-demo', '/'));
