@@ -11,7 +11,7 @@ description: Ajusta e estende a cena Three.js do template (dente procedural, cor
 |---|---|
 | `src/components/cinema/Cinema.astro` | Monta a trilha `.cinema`, o palco fixo (`.stage`) e calcula os **segmentos** (em alturas de tela) só com as cenas ativas: `inicio` (1), `tratamentos` (3), `especialidades` (1 + n×0,55 + 0,35). |
 | `src/components/cinema/{Hero,Tratamentos,Especialidades}Panel.astro` | Textos de cada cena + **âncoras de composição** `[data-anchor="hero|trat-a|trat-b|trat-c|arcada"]`, posicionadas por CSS. O 3D é enquadrado nesses retângulos. |
-| `src/scripts/cinema/cinema.ts` | **Timeline única** (GSAP + ScrollTrigger `scrub: 0.7`) que anima `state` (3D), `cine` (âncora e arco vinho) e os textos. Keyframes por cena com `T(f)` = fração do storyboard. |
+| `src/scripts/cinema/cinema.ts` | **Timeline única** (GSAP + ScrollTrigger `scrub: 1.2`) que anima `state` (3D), `cine` (âncora e arco vinho) e os textos. Keyframes por cena com `T(f)` = fração do storyboard. |
 | `src/scripts/cinema/stacked.ts` | Modo empilhado (só movimento reduzido): um renderizador fora da tela desenha cada `<canvas data-view>`; abas por camada (`LAYERS`) e especialidades por clique. O celular usa o cinema compacto (`html.cine-compact`, mesma timeline). |
 | `src/scripts/cinema/boot.ts` | Escolhe o modo; adia o WebGL (cinema: após `load`; mobile: 1ª interação ou 5 s). |
 | `src/scripts/three/stage.ts` | `Stage3D`: luzes, rig de câmera (distância calculada pelo retângulo + `setViewOffset`), dente em camadas, arcada, `warmup()` (shaders assíncronos), `project()` (legendas). |

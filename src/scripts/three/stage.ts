@@ -66,6 +66,16 @@ export class Stage3D {
   private quarterMats: ToothMaterial[] = [];
   private shadow!: THREE.Sprite;
   private rootPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 10);
+  /**
+   * Corte longitudinal na GPU para a casca lisa: remove o quadrante x>0, z>0
+   * (clipIntersection: só some o que está do lado negativo dos dois planos).
+   * Um par segue a raiz (toothRoot) e outro o esmalte (que sobe e inclina).
+   */
+  private rootCut = [new THREE.Plane(), new THREE.Plane()];
+  private enamelCutPlanes = [new THREE.Plane(), new THREE.Plane()];
+  /** casca lisa (coroa/raiz) usada quando o dente está cortado ou o esmalte erguido */
+  private liftGroup = new THREE.Group();
+  private hiddenMat = new THREE.MeshBasicMaterial({ visible: false });
   private gumPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
 
   private arcade = new THREE.Group();
@@ -113,7 +123,7 @@ export class Stage3D {
     fill.position.set(2.2, -1.2, 3);
     this.scene.add(hemi, key, rim, fill);
 
-    this.toothRoot.add(this.wholeGroup, this.cutGroup, this.quarterGroup);
+    this.toothRoot.add(this.wholeGroup, this.cutGroup, this.quarterGroup, this.liftGroup);
     this.enamelPivot.add(this.enamelHolder);
     this.scene.add(this.toothRoot, this.arcade);
   }
@@ -140,6 +150,7 @@ export class Stage3D {
     dispose(this.cutGroup);
     dispose(this.quarterGroup);
     dispose(this.enamelHolder);
+    this.liftGroup.clear();
 
     // pivô do esmalte no centro da coroa (inclinação de −8° do quadro C)
     const pivotY = 0.3;
@@ -158,6 +169,20 @@ export class Stage3D {
     shell.frustumCulled = false;
     this.wholeGroup.add(coreWhole, shell);
     this.cutGroup.add(mesh(P.core_cut, mk('core', 'coreCut')), mesh(P.pulp_cut, mk('pulp', 'pulp')));
+    // superfície externa do dente cortado/aberto = a mesma casca lisa do dente
+    // inteiro (coroa no esmalte, raiz no núcleo), recortada na GPU pelo corte;
+    // as malhas de corte só trazem as faces planas e o interior
+    const shellCrown = new THREE.Mesh(P.shell, [
+      mk('enamel', 'enamelShell', { clippingPlanes: this.enamelCutPlanes, clipIntersection: true }),
+      this.hiddenMat,
+    ]);
+    shellCrown.name = 'shellCrown';
+    shellCrown.frustumCulled = false;
+    this.enamelHolder.add(shellCrown);
+    const shellRoot = new THREE.Mesh(P.shell, [this.hiddenMat, mk('core', 'coreShell', { clippingPlanes: this.rootCut, clipIntersection: true })]);
+    shellRoot.name = 'shellRoot';
+    shellRoot.frustumCulled = false;
+    this.liftGroup.add(shellRoot);
 
     if (!this.quarterMats.length) {
       this.quarterMats = [
@@ -325,12 +350,32 @@ export class Stage3D {
     this.arcade.visible = true;
     this.cutGroup.visible = true;
     this.quarterGroup.visible = true;
+    this.liftGroup.visible = true;
+    const crown = this.enamelHolder.getObjectByName('shellCrown');
+    if (crown) crown.visible = true;
     try {
       await this.renderer.compileAsync(this.scene, this.camera);
     } catch {
       /* navegadores sem compilação assíncrona compilam no primeiro quadro */
     }
     this.arcade.visible = prev;
+  }
+
+  /** Planos do corte em coordenadas de mundo (a casca é recortada na GPU). */
+  private updateCutPlanes(active: boolean): void {
+    const set = (planes: THREE.Plane[], frame: THREE.Object3D) => {
+      if (!active) {
+        // longe de tudo: nada fica do lado negativo dos dois planos
+        planes[0]!.set(new THREE.Vector3(-1, 0, 0), 1e3);
+        planes[1]!.set(new THREE.Vector3(0, 0, -1), 1e3);
+        return;
+      }
+      frame.updateWorldMatrix(true, false);
+      planes[0]!.set(new THREE.Vector3(-1, 0, 0), 0).applyMatrix4(frame.matrixWorld);
+      planes[1]!.set(new THREE.Vector3(0, 0, -1), 0).applyMatrix4(frame.matrixWorld);
+    };
+    set(this.rootCut, this.toothRoot);
+    set(this.enamelCutPlanes, this.enamelHolder);
   }
 
   setPresets(p: SpecPreset[]): void {
@@ -374,6 +419,8 @@ export class Stage3D {
     enamelCut.visible = showCut;
     this.wholeGroup.getObjectByName('shell')!.visible = useShell;
     this.wholeGroup.getObjectByName('coreWhole')!.visible = !useShell;
+    this.enamelHolder.getObjectByName('shellCrown')!.visible = !useShell;
+    this.liftGroup.visible = !useShell;
 
     const q = smoothstep(0, 1, cut);
     this.quarterGroup.position.set(0.55 * q, 0.04 * q, 0.9 * q);
@@ -391,6 +438,7 @@ export class Stage3D {
     const float = Math.sin(t * 0.9) * 0.012 * idle;
     this.toothRoot.rotation.set(0, (st.toothRotY + sway) * DEG, st.toothRotZ * DEG, 'YXZ');
     this.toothRoot.position.set(0, st.toothRise + float * (1 - st.arch), 0);
+    this.updateCutPlanes(showCut);
 
     // esmaecimento por camada (abas do mobile) e cor de fundo atual
     const bgNow = this.bgLight.clone().lerp(this.bgDark, clamp01(st.dark));
@@ -405,6 +453,8 @@ export class Stage3D {
     setFade('enamelCut', st.enamelFade);
     setFade('core', st.coreFade);
     setFade('coreCut', st.coreFade);
+    setFade('enamelShell', st.enamelFade);
+    setFade('coreShell', st.coreFade);
     setFade('pulp', st.coreFade * 0.6);
     this.quarterMats.forEach((m) => m.userData.uniforms.uBg.value.copy(bgNow));
     const pulp = this.mats.pulp;

@@ -270,4 +270,27 @@ const is3d = hero.visual === '3d';
       min-height: 0;
     }
   }
+
+  /* Desktop baixo (notebooks com zoom do sistema, ex. 1260 × 590): tudo cabe acima da dobra */
+  @media (min-width: 900px) and (max-height: 760px) {
+    .hero__inner {
+      padding-top: calc(88px + 3vh);
+      padding-bottom: 3.5vh;
+      gap: 2.5vh;
+    }
+    .hero__title {
+      margin-top: 2vh;
+      font-size: min(var(--fs-hero), 10.4vh);
+    }
+    .hero__text {
+      margin-top: 2vh;
+      font-size: min(var(--fs-lead), 2.6vh);
+    }
+    .hero__ctas {
+      margin-top: 3vh;
+    }
+    .hero__note {
+      margin-top: 1.2vh;
+    }
+  }
 </style>

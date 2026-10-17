@@ -175,8 +175,24 @@ function finalize(
   snap = 0,
   /** sólido completo (CSG): o contorno da face de corte é levado a solid = 0 */
   solid?: Fn,
-  /** peça do corte: 1 = dente sem o quadrante x>0,z>0; −1 = o quadrante */
-  piece: 1 | -1 = 1,
+  /** peça do corte: 1 = dente sem o quadrante x>0,z>0; −1 = o quadrante; 0 = inteiro */
+  piece: 1 | -1 | 0 = 1,
+  /** tamanho da célula da grade (projeção dos vértices na superfície exata) */
+  cell = 0,
+  /**
+   * Mistura as normais das faces (disfarça vincos de superfícies compostas).
+   * Superfícies lisas e já projetadas usam só o gradiente: brilho sem pontilhado.
+   */
+  blendFaces = true,
+  /** termos do CSG (com sinal): vértices em vincos vão à interseção exata */
+  terms?: Fn[],
+  /** função barata que delimita onde há vincos visíveis (|g| pequeno) */
+  creaseGate?: Fn,
+  /**
+   * Superfícies (índices em `surfaces`) cujos triângulos são descartados: a
+   * superfície externa das peças é desenhada pela casca lisa (Stage3D).
+   */
+  drop?: number[],
 ): MeshData {
   const n = raw.positions.length / 3;
   const normals = new Float32Array(n * 3);
@@ -184,6 +200,7 @@ function finalize(
   const planar = new Uint8Array(n);
   const P = raw.positions;
   const h = 0.004;
+  if (snap === 0 && solid && cell > 0) projectCutSurface(P, solid, cell, 0, terms, creaseGate);
   if (snap > 0) {
     for (let i = 0; i < n; i++) {
       const x = P[3 * i]!,
@@ -192,15 +209,19 @@ function finalize(
       if (Math.abs(z) < snap && x > snap * 0.5) P[3 * i + 2] = 0;
     }
     if (solid) {
-      projectCutSurface(P, solid, snap, piece);
+      // o quadrante só aparece por um instante (some enquanto o corte abre): só o contorno
+      if (piece !== -1) projectCutSurface(P, solid, snap, piece || 1, terms, creaseGate);
       projectCutOutline(P, raw.indices, solid, snap);
     }
   }
+  const cls = drop ? new Int8Array(n) : null;
   for (let i = 0; i < n; i++) {
     let x = P[3 * i]!,
       y = P[3 * i + 1]!,
       z = P[3 * i + 2]!;
-    const s = surfaces[classify(x, y, z)] ?? surfaces[0]!;
+    const k = classify(x, y, z);
+    if (cls) cls[i] = k;
+    const s = surfaces[k] ?? surfaces[0]!;
     let nx: number, ny: number, nz: number;
     if (s.plane) {
       if (s.plane === 'x') x = 0;
@@ -228,6 +249,26 @@ function finalize(
     colors[3 * i + 2] = c[2];
     if (s.plane) planar[i] = 1;
   }
+  let indices = raw.indices;
+  if (cls && drop) {
+    const fora = new Set(drop);
+    const keep: number[] = [];
+    for (let t = 0; t < indices.length; t += 3) {
+      const a = indices[t]!,
+        b = indices[t + 1]!,
+        c = indices[t + 2]!;
+      // triângulos das faces planas do corte ficam sempre
+      const plano = (k: number) => P[3 * k] === 0 || P[3 * k + 2] === 0;
+      const noPlano =
+        (P[3 * a] === 0 && P[3 * b] === 0 && P[3 * c] === 0) || (P[3 * a + 2] === 0 && P[3 * b + 2] === 0 && P[3 * c + 2] === 0);
+      const nFora = +fora.has(cls[a]!) + +fora.has(cls[b]!) + +fora.has(cls[c]!);
+      // faixa junto à borda: maioria na superfície externa e fora do plano → sai
+      if (!noPlano && (nFora === 3 || (nFora === 2 && !(plano(a) && plano(b) && plano(c))))) continue;
+      keep.push(a, b, c);
+    }
+    indices = Uint32Array.from(keep);
+  }
+  if (!blendFaces) return { positions: P, normals, colors, indices };
   // média com as normais das faces: remove pontilhados em arestas/vincos
   const acc = new Float32Array(n * 3);
   const I = raw.indices;
@@ -264,7 +305,7 @@ function finalize(
     normals[3 * i + 1] = y / m;
     normals[3 * i + 2] = z / m;
   }
-  return { positions: P, normals, colors, indices: raw.indices };
+  return { positions: P, normals, colors, indices };
 }
 
 /**
@@ -273,34 +314,64 @@ function finalize(
  * até solid = 0 em 3D e, se cruzarem o plano, ficam presos nele — a aresta
  * volta a ser viva e lisa.
  */
-function projectCutSurface(P: Float32Array, solid: Fn, cell: number, piece: 1 | -1): void {
+/** Um passo de Newton de (x, y, z) rumo a fn = 0; devolve também a distância estimada. */
+function newton(fn: Fn, x: number, y: number, z: number, e: number): [number, number, number, number] {
+  // diferenças progressivas: 4 avaliações em vez de 7 (a função custa caro)
+  const f = fn(x, y, z);
+  const gx = (fn(x + e, y, z) - f) / e;
+  const gy = (fn(x, y + e, z) - f) / e;
+  const gz = (fn(x, y, z + e) - f) / e;
+  const g2 = gx * gx + gy * gy + gz * gz;
+  if (g2 < 1e-10) return [x, y, z, Infinity];
+  return [x - (f * gx) / g2, y - (f * gy) / g2, z - (f * gz) / g2, Math.abs(f) / Math.sqrt(g2)];
+}
+
+function projectCutSurface(P: Float32Array, solid: Fn, cell: number, piece: 1 | -1 | 0, terms?: Fn[], creaseGate?: Fn): void {
   const n = P.length / 3;
-  const e = cell * 0.25;
-  const maxMove = cell * 0.9;
+  // derivada com passo curto: o perfil é muito inclinado junto ao contorno (silhueta)
+  const e = cell * 0.08;
+  const tol = cell * 0.02;
   for (let i = 0; i < n; i++) {
     const x0 = P[3 * i]!,
       y0 = P[3 * i + 1]!,
       z0 = P[3 * i + 2]!;
-    if (x0 === 0 || z0 === 0) continue; // já está num plano de corte
-    // só a faixa junto à aresta do corte precisa (o resto já está na superfície)
-    if (Math.min(Math.abs(x0), Math.abs(z0)) > cell * 2) continue;
+    if (piece && (x0 === 0 || z0 === 0)) continue; // já está num plano de corte
+    // o vértice da grade fica até ~1 célula fora da superfície → silhueta ondulada
+    const borda = piece !== 0 && Math.min(Math.abs(x0), Math.abs(z0)) <= cell * 2;
+    const maxMove = cell * (borda ? 0.9 : 1.6);
     let x = x0,
       y = y0,
       z = z0;
-    for (let k = 0; k < 2; k++) {
-      const f = solid(x, y, z);
-      const gx = (solid(x + e, y, z) - solid(x - e, y, z)) / (2 * e);
-      const gy = (solid(x, y + e, z) - solid(x, y - e, z)) / (2 * e);
-      const gz = (solid(x, y, z + e) - solid(x, y, z - e)) / (2 * e);
-      const g2 = gx * gx + gy * gy + gz * gz;
-      if (g2 < 1e-10) break;
-      x -= (f * gx) / g2;
-      y -= (f * gy) / g2;
-      z -= (f * gz) / g2;
+    for (let k = 0; k < 4; k++) {
+      const r = newton(solid, x, y, z, e);
+      if (r[3] === Infinity) break;
+      [x, y, z] = r;
+      if (r[3] < tol) break;
+    }
+    // vinco entre duas superfícies (ex.: esmalte × linha cervical): projeções
+    // alternadas levam o vértice à linha de interseção — sem dente de serra
+    if (terms && (!creaseGate || Math.abs(creaseGate(x, y, z)) < cell * 1.5)) {
+      // filtro barato (só o valor) antes de calcular gradientes
+      let candidatos = 0;
+      for (const t of terms) if (Math.abs(t(x, y, z)) < cell * 1.5) candidatos++;
+      const perto = candidatos >= 2 ? terms.filter((t) => newton(t, x, y, z, e)[3] < cell * 0.6) : [];
+      if (perto.length >= 2) {
+        let a = x,
+          b = y,
+          c = z;
+        for (let k = 0; k < 6; k++) for (const t of perto.slice(0, 2)) [a, b, c] = newton(t, a, b, c, e);
+        if (newton(solid, a, b, c, e)[3] < cell * 0.1 && Math.hypot(a - x0, b - y0, c - z0) < maxMove) {
+          x = a;
+          y = b;
+          z = c;
+        }
+      }
     }
     if (!(Math.hypot(x - x0, y - y0, z - z0) < maxMove)) continue;
     // mantém o vértice dentro da peça (prende ao plano que cruzou)
-    if (piece === 1) {
+    if (piece === 0) {
+      /* dente inteiro: sem corte */
+    } else if (piece === 1) {
       if (x > 0 && z > 0) {
         if (x < z) x = 0;
         else z = 0;
@@ -364,22 +435,63 @@ function projectCutOutline(P: Float32Array, I: Uint32Array, solid: Fn, cell: num
   }
 }
 
-/** Separa os triângulos em dois grupos de material (coroa = 0, raiz = 1). */
-function splitGroups(m: MeshData, isCrown: (x: number, y: number) => boolean): MeshData {
+/**
+ * Separa a casca em dois grupos de material (coroa = 0, raiz = 1) cortando os
+ * triângulos exatamente na curva cervical (crownValue = 0). Assim a coroa pode
+ * se afastar da raiz (esmalte erguido) sem borda em dente de serra.
+ */
+function splitGroups(m: MeshData, crownValue: (x: number, y: number) => number): MeshData {
   const idx = m.indices;
-  const a: number[] = [];
-  const b: number[] = [];
-  const P = m.positions;
+  const pos = Array.from(m.positions);
+  const nor = Array.from(m.normals);
+  const col = Array.from(m.colors);
+  const val: number[] = [];
+  for (let i = 0; i < pos.length / 3; i++) val.push(crownValue(pos[3 * i]!, pos[3 * i + 1]!));
+  const meio = new Map<string, number>();
+  const corte = (i: number, j: number): number => {
+    const k = i < j ? `${i}_${j}` : `${j}_${i}`;
+    const got = meio.get(k);
+    if (got !== undefined) return got;
+    const t = val[i]! / (val[i]! - val[j]!);
+    const v = pos.length / 3;
+    for (let c = 0; c < 3; c++) {
+      pos.push(pos[3 * i + c]! + (pos[3 * j + c]! - pos[3 * i + c]!) * t);
+      col.push(col[3 * i + c]! + (col[3 * j + c]! - col[3 * i + c]!) * t);
+    }
+    let nx = nor[3 * i]! + (nor[3 * j]! - nor[3 * i]!) * t,
+      ny = nor[3 * i + 1]! + (nor[3 * j + 1]! - nor[3 * i + 1]!) * t,
+      nz = nor[3 * i + 2]! + (nor[3 * j + 2]! - nor[3 * i + 2]!) * t;
+    const l = Math.hypot(nx, ny, nz) || 1;
+    nor.push(nx / l, ny / l, nz / l);
+    val.push(0);
+    meio.set(k, v);
+    return v;
+  };
+  const a: number[] = []; // coroa
+  const b: number[] = []; // raiz
+  const lado = (i: number) => val[i]! < 0;
   for (let t = 0; t < idx.length; t += 3) {
-    const i0 = idx[t]!,
-      i1 = idx[t + 1]!,
-      i2 = idx[t + 2]!;
-    const cx = (P[3 * i0]! + P[3 * i1]! + P[3 * i2]!) / 3;
-    const cy = (P[3 * i0 + 1]! + P[3 * i1 + 1]! + P[3 * i2 + 1]!) / 3;
-    (isCrown(cx, cy) ? a : b).push(i0, i1, i2);
+    const tri = [idx[t]!, idx[t + 1]!, idx[t + 2]!];
+    const c = tri.map(lado);
+    if (c[0] === c[1] && c[1] === c[2]) {
+      (c[0] ? a : b).push(...tri);
+      continue;
+    }
+    // o vértice isolado (lado diferente dos outros dois) fica num triângulo;
+    // os outros dois formam um quadrilátero → 2 triângulos (mantém a orientação)
+    const s0 = c[0] === c[1] ? 2 : c[0] === c[2] ? 1 : 0;
+    const v0 = tri[s0]!,
+      v1 = tri[(s0 + 1) % 3]!,
+      v2 = tri[(s0 + 2) % 3]!;
+    const m01 = corte(v0, v1),
+      m02 = corte(v0, v2);
+    (c[s0] ? a : b).push(v0, m01, m02);
+    (c[s0] ? b : a).push(m01, v1, v2, m01, v2, m02);
   }
   return {
-    ...m,
+    positions: Float32Array.from(pos),
+    normals: Float32Array.from(nor),
+    colors: Float32Array.from(col),
     indices: Uint32Array.from([...a, ...b]),
     groups: [
       [0, a.length, 0],
@@ -507,7 +619,11 @@ export function buildTooth(opts: BuildOptions): ToothData {
         if (k === 101) return 4;
       }
       return Fv === a ? 0 : Fv === c ? 1 : 2;
-    }, mode ? g.h * 1.3 : 0, (x, y, z) => Math.max(fP(x, y, z), cs(x, y, z), -fD(x, y, z)), s);
+    }, mode ? g.h * 1.3 : 0, (x, y, z) => Math.max(fP(x, y, z), cs(x, y, z), -fD(x, y, z)), mode ? s : 0, g.h, true, [
+      fP,
+      cs,
+      (x, y, z) => -fD(x, y, z),
+    ], cs, mode === -1 ? undefined : [0, 2]);
   };
 
   const coreMesh = (g: Grid, mode: 0 | 1 | -1) => {
@@ -541,7 +657,7 @@ export function buildTooth(opts: BuildOptions): ToothData {
     }, mode ? g.h * 1.3 : 0, (x, y, z) => {
       const c = cs(x, y, z);
       return Math.max(Math.min(Math.max(fD(x, y, z), c), Math.max(fP(x, y, z), -c)), -fQ(x, y, z));
-    }, s);
+    }, mode ? s : 0, g.h, true, [fD, fP, cs, (x, y, z) => -cs(x, y, z)], cs, mode === -1 ? undefined : [1]);
   };
 
   const pulpMesh = (g: Grid, mode: 0 | 1 | -1) => {
@@ -554,12 +670,12 @@ export function buildTooth(opts: BuildOptions): ToothData {
         if (k === 101) return 2;
       }
       return 0;
-    }, mode ? g.h * 1.3 : 0, fQ, s);
+    }, mode ? g.h * 1.3 : 0, fQ, mode ? s : 0, g.h);
   };
 
   const shell = splitGroups(
-    finalize(surfaceNets(shellG), [{ f: fP, s: 1, color: shellColor }], () => 0),
-    (x, y) => cs(x, y, 0) < 0,
+    finalize(surfaceNets(shellG), [{ f: fP, s: 1, color: shellColor }], () => 0, 0, fP, 0, shellG.h, false),
+    (x, y) => cs(x, y, 0),
   );
 
   const whole = { shell, enamel: enamelMesh(enamelG, 0), core: coreMesh(coreG, 0) };
@@ -644,6 +760,11 @@ function crownMesh(fn: Fn, height: number, h: number): MeshData {
       { f: (_x, y) => -y, s: 1, color: () => C.crownC },
     ],
     (x, y, z) => (fn(x, y, z) >= -y ? 0 : 1),
+    0,
+    solid,
+    0,
+    h,
+    false,
   );
 }
 

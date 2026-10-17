@@ -89,16 +89,17 @@ const total = segments.reduce((acc, s) => acc + s.len, 0);
   }
 
   /* ---------- Modo cinema ---------- */
-  /* Unidade de rolagem de cada cena: 1 tela no desktop; menos no celular.
+  /* Unidade de rolagem de cada cena: 1,5 tela no desktop; 1,1 no celular
+     (com a roda do mouse, 1 tela por cena passava rápido demais).
      vh = viewport "grande" (barras do navegador recolhidas) no iOS e no
      Android, portanto não muda quando a barra de endereço aparece/some. */
   html.is-cinema {
-    --cine-unit: 100vh;
+    --cine-unit: 150vh;
     /* faixa coberta pelas barras do navegador quando visíveis (0 no desktop) */
     --cine-ui-bottom: 0px;
   }
   html.is-cinema.cine-compact {
-    --cine-unit: 72vh;
+    --cine-unit: 110vh;
   }
   @supports (height: 100svh) {
     html.is-cinema.cine-compact {

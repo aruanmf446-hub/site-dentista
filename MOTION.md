@@ -1,8 +1,8 @@
 # Motion — timeline 3D e animações
 
 ## 1. Sequência cinematográfica (modo cinema)
-Uma **única timeline** GSAP, controlada por um ScrollTrigger (`scrub: 0.7`) sobre `.cinema`.
-A unidade de tempo é **uma altura de tela (vh)**. As cenas ativas formam segmentos:
+Uma **única timeline** GSAP, controlada por um ScrollTrigger (`scrub: 1.2`) sobre `.cinema`.
+A unidade de tempo é **uma cena** (`--cine-unit` de rolagem: 1,5 tela no desktop, 1,1 no celular). As cenas ativas formam segmentos:
 
 | Segmento | Comprimento | Conteúdo |
 |---|---|---|
@@ -54,7 +54,7 @@ A timeline é **a mesma** do desktop. `html.cine-compact` muda só:
 
 | O quê | Desktop | Compacto |
 |---|---|---|
-| Rolagem por cena (`--cine-unit`) | 100vh | 72vh (trechos fixados mais curtos) |
+| Rolagem por cena (`--cine-unit`) | 150vh | 110vh |
 | Composição | âncoras e textos do artboard Main | hero do MobileHero; quadro A centrado no arco; B com o dente à esquerda e legendas à direita; C com o dente no canto superior direito e a lista (até 6 itens) abaixo; arcada sob o título, especialidades em 2 colunas |
 | Qualidade 3D | DPR até 2, MSAA 4×, geometria 0,016 → 0,0095 | DPR até 2, MSAA 4×, geometria 0,016 → 0,011 |
 | Giro ocioso | 60 quadros/s | ~30 quadros/s |
@@ -63,8 +63,9 @@ A timeline é **a mesma** do desktop. `html.cine-compact` muda só:
 **Nitidez.** O canvas é desenhado em até 2× a tela (telas 3× também ficam em 2×: diferença
 imperceptível, 2,25× menos pixels) com antisserrilhado 4×, e sempre no tamanho real em que
 aparece (redimensionar, girar, zoom do navegador ou trocar de monitor refazem o canvas — nunca
-é esticado por CSS). Um governador de resolução reduz 0,25× por vez (até 1,25× no celular e 1×
-no desktop) quando os quadros desenhados em sequência passam de ~28 ms. A geometria fina é
+é esticado por CSS). Um governador de resolução reduz 0,25× por vez quando os quadros desenhados
+em sequência passam de ~40 ms (abaixo de ~25 quadros/s), nunca abaixo da densidade nativa da
+tela no desktop nem de 1,5× no celular. A geometria fina é
 gerada no worker; as faces de corte têm o contorno projetado sobre a superfície exata
 (`projectCutOutline`/`projectCutSurface` em `tooth-builder.ts`), sem degraus da grade.
 

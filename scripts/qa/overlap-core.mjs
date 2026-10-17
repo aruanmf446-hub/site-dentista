@@ -63,8 +63,12 @@ export function auditFrame() {
       const a = inter(A, B);
       if (a > 40) achados.push({ tipo: 'texto×texto', item: `${A.nome} / ${B.nome}`, px: Math.round(a) });
     }
+  // fundo coberto pela barra fixa do celular (quando existe)
+  const bar = document.querySelector('[data-mobile-bar]');
+  const barTop = bar && getComputedStyle(bar).display !== 'none' ? bar.getBoundingClientRect().top : H;
   for (const x of texts) {
     if (x.l < 8 || x.r > W - 8) achados.push({ tipo: 'margem', item: x.nome, px: Math.round(Math.min(x.l, W - x.r)) });
+    if (x.b > Math.min(H, barTop) - 2 || x.t < 0) achados.push({ tipo: 'cortado', item: x.nome, px: Math.round(x.b - Math.min(H, barTop)) });
     if (hdr) {
       // o cabeçalho visível (barra completa ou pílula) não pode cobrir texto da cena
       const pill = hdr.querySelector('.hdr-pill');

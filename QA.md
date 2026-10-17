@@ -3,6 +3,46 @@
 Execução registrada em 16/10/2026, nesta branch, no ambiente de nuvem do Claude Code
 (Linux, Chromium 141 do Playwright 1.64, **WebGL por software — SwiftShader**, sem GPU).
 
+## Rodada 3 — tela baixa, qualidade do 3D e velocidade da rolagem (17/10/2026)
+Reproduzido no tamanho relatado: Windows com zoom de 150% → viewport **1260 × 587**, DPR 1,5.
+
+**Posição (tela baixa).** A auditoria passou a incluir 375 × 667, 1260 × 587, 1366 × 650 e
+1536 × 730 (9 telas no total) e a detectar texto cortado na borda da tela.
+
+| Problema | Causa | Correção |
+|---|---|---|
+| Aviso "Destaques ilustrativos" sobre o link do cartão e os molares | a caixa da arcada tinha `min-height: 520px` (passava da tela); aviso largo invadindo a lista | arcada termina 96 px acima do rodapé; aviso numa faixa própria sob a coluna da arcada |
+| Título do quadro A cortado no rodapé | posição fixa em 66,6% da altura | ancorado ao rodapé e tamanho limitado pela altura (≤ 8,4vh) |
+| Agendamento rápido do hero cortado (1366 × 650, 1536 × 730) | espaçamentos fixos | espaçamentos e título proporcionais à altura |
+| Última especialidade encostando no rodapé | itens com altura mínima fixa | altura e corpo dos itens pela altura disponível |
+| Celular 375 × 667: lista sobre o cartão | arcada encolhia e o cartão transbordava | arcada 35vh sem encolher |
+
+Resultado: **0 achados** em 9 telas × 28 pontos da sequência.
+
+**Qualidade.** A resolução já era a nativa (1,5×); o defeito era a forma:
+- os vértices da malha ficavam até ~1 célula fora da superfície → silhueta ondulada. Agora
+  cada vértice é projetado na superfície exata (Newton com derivada curta, até 4 passos):
+  rugosidade do contorno **1,9 px → 0,4 px** (malha fina) e **1,2 → 0,7 px** (primeira malha);
+- brilho pontilhado na silhueta → normais só do gradiente na casca e nas coroas da arcada;
+- dente cortado: a superfície externa vinha das malhas de esmalte/dentina (esmalte mais fino
+  que a célula junto à linha cervical → degraus e franjas). Agora é a **mesma casca lisa** do
+  dente inteiro, dividida exatamente na curva cervical e recortada na GPU (planos de recorte
+  que seguem raiz e esmalte); as malhas de corte só trazem as faces planas e o interior;
+- vincos (esmalte × linha cervical) levados à interseção exata das superfícies.
+Antes × depois em 1260 × 587: `docs/qa/qualidade-1260-dente-antes-depois.jpg`,
+`docs/qa/qualidade-1260-arcada-antes-depois.jpg`; quadros B e C: `docs/qa/qualidade-1260-quadro-b.jpg`,
+`docs/qa/qualidade-1260-quadro-c.jpg`. Geração da malha: +36% (no worker, fora da thread principal).
+
+**Velocidade.** Cada cena passou de 1 para **1,5 tela** de rolagem no desktop (0,72 → 1,1 no
+celular) e o `scrub` de 0,7 s para **1,2 s** (a cena alcança a rolagem com suavidade). O
+governador de resolução não desce mais abaixo da densidade nativa da tela no desktop (1,5× no
+celular) e só age abaixo de ~25 quadros/s.
+
+**Testes:** `astro check` 0 erros; suíte completa **79 de 79** (76 na rodada completa + os 3
+testes pesados de 1440/1260 repetidos com tempo maior: a GPU emulada por software desenha
+~0,6 s por quadro e, com o scrub de 1,2 s, cada ponto leva ~10–20 s). Novo: sobreposição em
+1260 × 587 (DPR 1,5).
+
 ## Refino visual — sobreposições e nitidez (17/10/2026)
 Investigado no build idêntico ao publicado (`3d326ea`) e no corrigido, em 390 × 844, 768 × 1024,
 1024 × 768, 1280 × 800 e 1440 × 900.

@@ -8,20 +8,22 @@ import { url, trackErrors, waitScene } from '../helpers';
 // módulo JS compartilhado com scripts/qa/overlap-audit.mjs
 import { auditFrame } from '../../scripts/qa/overlap-core.mjs';
 
-const TEMPOS = [0, 0.5, 1.0, 1.3, 1.45, 1.6, 1.9, 2.2, 2.5, 2.65, 2.75, 2.85, 3.0, 3.15, 3.5, 3.85, 4.3, 5.0, 5.6, 6.8, 8.0];
+const TEMPOS = [0, 0.5, 0.8, 1.0, 1.3, 1.45, 1.6, 1.9, 2.2, 2.5, 2.65, 2.75, 2.85, 3.0, 3.15, 3.5, 3.85, 4.3, 5.0, 5.6, 6.8, 8.0];
 
 async function irPara(page: Page, t: number) {
   await page.evaluate((t) => {
     const c = (window as any).__cinema;
     window.scrollTo({ top: c.st.start + (t / c.tl.duration()) * (c.st.end - c.st.start), behavior: 'instant' });
   }, t);
-  await page.waitForFunction((t) => Math.abs((window as any).__cinema.tl.time() - t) < 0.01, t, { timeout: 30_000 });
+  await page.waitForFunction((t) => Math.abs((window as any).__cinema.tl.time() - t) < 0.01, t, { timeout: 90_000 });
   await page.waitForTimeout(100);
 }
 
 const TELAS = [
   { nome: '1440', use: { viewport: { width: 1440, height: 900 } } },
   { nome: '1024', use: { viewport: { width: 1024, height: 768 } } },
+  // notebook com zoom do sistema em 150% (tela "baixa")
+  { nome: '1260x587', use: { viewport: { width: 1260, height: 587 }, deviceScaleFactor: 1.5 } },
   { nome: '390', use: { viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true } },
 ] as const;
 
@@ -29,7 +31,8 @@ for (const tela of TELAS) {
   test.describe(`[${tela.nome}]`, () => {
     test.use(tela.use);
     test('sem sobreposição do dente/arcada com textos, nem textos sobrepostos, em toda a sequência', async ({ page }) => {
-      test.setTimeout(300_000);
+      // GPU emulada por software: quadros lentos + scrub de 1,2 s
+      test.setTimeout(900_000);
       const errors = trackErrors(page);
       await page.goto(url('alva-demo', '/'));
       await waitScene(page);
