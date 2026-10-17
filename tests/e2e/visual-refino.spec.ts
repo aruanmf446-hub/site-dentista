@@ -139,7 +139,7 @@ test.describe('fotos na resolução da tela', () => {
 
 test.describe('antes do 3D ficar pronto', () => {
   test.use({ viewport: { width: 1904, height: 881 } });
-  test('a arcada em CSS das especialidades não aparece sobre o hero', async ({ page }) => {
+  test('nem a arcada em CSS das especialidades nem o dente 2D aparecem no hero', async ({ page }) => {
     // segura o worker da geometria: a página fica no intervalo entre a timeline e o 3D
     await page.route(/worker/i, (r) => (r.request().resourceType() === 'script' ? new Promise(() => {}) : r.continue()));
     await page.goto(url('alva-demo', '/'));
@@ -148,11 +148,14 @@ test.describe('antes do 3D ficar pronto', () => {
     const estado = await page.evaluate(() => ({
       pronto: document.documentElement.classList.contains('stage-ready'),
       arcada: getComputedStyle(document.querySelector('.esp [data-arcade-css]')!).visibility,
-      denteHero: getComputedStyle(document.querySelector('.hero__tooth-svg')!).visibility,
+      // sem dente 2D enquanto o 3D prepara: só o brilho no arco
+      denteHero2d: getComputedStyle(document.querySelector('.hero__tooth-svg')!).opacity,
+      brilho: getComputedStyle(document.querySelector('.hero__tooth')!, '::after').content,
     }));
     expect(estado.pronto).toBe(false);
     expect(estado.arcada).toBe('hidden');
-    expect(estado.denteHero).toBe('visible');
+    expect(estado.denteHero2d).toBe('0');
+    expect(estado.brilho).not.toBe('none');
   });
 });
 

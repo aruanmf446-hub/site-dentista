@@ -1,8 +1,8 @@
 /// <reference lib="webworker" />
 /**
  * Worker que gera a geometria do dente fora da thread principal.
- * Envia primeiro uma versão rápida (célula maior) e, se pedido, uma
- * versão refinada logo depois.
+ * Envia primeiro só a casca (o dente do hero), depois a versão rápida
+ * completa (célula maior) e, se pedido, uma versão refinada.
  */
 import { buildTooth, type MeshData, type ToothData } from './geometry/tooth-builder';
 
@@ -16,9 +16,9 @@ function transferables(d: ToothData): Transferable[] {
   return out;
 }
 
-self.onmessage = (e: MessageEvent<{ cells: number[] }>) => {
-  for (const cell of e.data.cells) {
-    const data = buildTooth({ cell });
-    (self as unknown as Worker).postMessage({ cell, data }, transferables(data));
+self.onmessage = (e: MessageEvent<{ jobs: { cell: number; shellOnly?: boolean }[] }>) => {
+  for (const job of e.data.jobs) {
+    const data = buildTooth(job);
+    (self as unknown as Worker).postMessage({ cell: job.cell, data }, transferables(data));
   }
 };

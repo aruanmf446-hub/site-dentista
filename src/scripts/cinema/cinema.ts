@@ -24,7 +24,8 @@ import { gsap } from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { Stage3D } from '../three/stage';
 import { defaultState, lerp, clamp01, type FrameRect, type SceneState } from '../three/state';
-import { dpr, loadAssets, readColors, readPresets } from './shared';
+import { dpr, readColors, readPresets, takeAssets } from './shared';
+import { resumeProcedural } from '../three/model-source';
 import { COMPACT_BELOW } from './boot';
 import { espHooks, especialidadesApi } from '../ui/especialidades';
 
@@ -457,6 +458,10 @@ export async function initCinema(): Promise<void> {
   }
 
   let first = true;
+  // só a casca chegou: até o resto chegar (fração de segundo) a cena mostra o
+  // dente inteiro, mesmo que a rolagem já esteja no corte ou na arcada
+  let partial = false;
+  const wholeOnly = (st: SceneState): SceneState => ({ ...st, cut: 0, enamelLift: 0, enamelTilt: 0, arch: 0, archTeeth: 0, rootClip: 0 });
   // o palco só desenha depois de compilar os shaders (warmup): desenhar antes
   // compila tudo de uma vez na thread principal e trava a rolagem por ~1 s
   let live = false;
@@ -495,13 +500,17 @@ export async function initCinema(): Promise<void> {
     applyArch(); // o arco (DOM) anima mesmo antes do 3D
     if (!stage || !live) return;
     if (idle) stage.tick(dt);
-    stage.apply(state, toothRect(), rects.arcada!);
+    stage.apply(partial ? wholeOnly(state) : state, toothRect(), rects.arcada!);
     stage.render();
     govern();
     updateLeaders();
     if (first) {
       first = false;
       html.classList.add('stage-ready');
+      // agora o resto: geometria completa (worker) e shaders do corte e da
+      // arcada, enquanto o visitante lê o hero
+      resumeProcedural();
+      window.setTimeout(() => void stage?.warmup(true), 400);
     }
   };
   gsap.ticker.add(loop);
@@ -589,8 +598,10 @@ export async function initCinema(): Promise<void> {
     window.dispatchEvent(new Event('resize'));
   };
 
-  /* ---------- 3D: depois do carregamento (o SVG do design cobre o intervalo) ---------- */
-  await afterLoad();
+  /* ---------- 3D: a geometria já vem sendo gerada desde o boot (worker); o
+     contexto WebGL espera só a página terminar de pintar (load + um instante
+     ocioso, no máximo 300 ms) — antes disso ele disputa a GPU com a 1ª pintura ---------- */
+  await afterPaint();
   try {
     stage = new Stage3D(canvas, readColors(), { antialias: true });
   } catch (err) {
@@ -610,15 +621,18 @@ export async function initCinema(): Promise<void> {
   // se a geometria não chegar a tempo (aparelho muito lento, worker travado), desiste
   const timeout = window.setTimeout(() => teardown('tempo esgotado ao preparar o 3D'), 25_000);
   try {
-    const assets = await loadAssets(compactAtStart ? 'compact' : 'cinema', (refined) => {
+    // 1º só a casca (o dente do hero), depois o resto e a versão refinada
+    const assets = await takeAssets(compactAtStart ? 'compact' : 'cinema', (refined) => {
       if (tornDown || !stage) return;
       stage.setAssets(refined);
+      partial = !!refined.partial;
       dirty = true;
     });
     if (tornDown || !stage) return;
     stage.setAssets(assets);
+    partial = !!assets.partial;
     stage.apply(state, toothRect(), rects.arcada!);
-    await stage.warmup();
+    await stage.warmup(false); // só o dente do hero: aparece logo
   } catch (err) {
     window.clearTimeout(timeout);
     teardown('erro ao preparar a cena', err);
@@ -631,8 +645,8 @@ export async function initCinema(): Promise<void> {
   dirty = true;
 }
 
-/** Resolve após o evento load + um instante ocioso (ou na primeira rolagem). */
-function afterLoad(): Promise<void> {
+/** Resolve após o evento load + um instante ocioso (≤ 300 ms), ou na primeira interação. */
+function afterPaint(): Promise<void> {
   return new Promise((resolve) => {
     let done = false;
     const go = () => {
@@ -645,8 +659,8 @@ function afterLoad(): Promise<void> {
     }
     const idle = () => {
       const ric = (window as unknown as { requestIdleCallback?: (cb: () => void, o: { timeout: number }) => void }).requestIdleCallback;
-      if (ric) ric(go, { timeout: 800 });
-      else window.setTimeout(go, 300);
+      if (ric) ric(go, { timeout: 300 });
+      else window.setTimeout(go, 100);
     };
     if (document.readyState === 'complete') idle();
     else window.addEventListener('load', idle, { once: true });

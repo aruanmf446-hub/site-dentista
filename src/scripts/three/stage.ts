@@ -188,6 +188,18 @@ export class Stage3D {
     shellRoot.name = 'shellRoot';
     shellRoot.frustumCulled = false;
     this.liftGroup.add(shellRoot);
+    // com o esmalte erguido: parede da dentina (por fora) e o interior do
+    // esmalte (a mesma superfície vista de dentro), lisas e recortadas como a casca
+    const dentinWall = new THREE.Mesh(P.dentin, [mk('core', 'coreShell'), this.hiddenMat]);
+    dentinWall.frustumCulled = false;
+    this.liftGroup.add(dentinWall);
+    const enamelInner = new THREE.Mesh(P.enamel_inner, [
+      mk('enamel', 'enamelInner', { side: THREE.BackSide, clippingPlanes: this.enamelCutPlanes, clipIntersection: true }),
+      this.hiddenMat,
+    ]);
+    enamelInner.name = 'enamelInner';
+    enamelInner.frustumCulled = false;
+    this.enamelHolder.add(enamelInner);
 
     if (!this.quarterMats.length) {
       this.quarterMats = [
@@ -344,9 +356,11 @@ export class Stage3D {
 
   /**
    * Compila os shaders sem travar a página (KHR_parallel_shader_compile,
-   * quando disponível). Chamado antes do primeiro quadro.
+   * quando disponível). `all = false`: só o que está à vista (o dente do hero),
+   * para o 3D aparecer logo; `all = true`: o restante (corte, arcada), em
+   * seguida, antes de a rolagem chegar lá.
    */
-  async warmup(): Promise<void> {
+  async warmup(all = true): Promise<void> {
     // mapa de ambiente (reflexos da porcelana) em uma tarefa separada
     await new Promise((r) => setTimeout(r, 0));
     if (!this.scene.environment) {
@@ -355,19 +369,27 @@ export class Stage3D {
       pmrem.dispose();
     }
     await new Promise((r) => setTimeout(r, 0));
-    const prev = this.arcade.visible;
-    this.arcade.visible = true;
-    this.cutGroup.visible = true;
-    this.quarterGroup.visible = true;
-    this.liftGroup.visible = true;
-    const crown = this.enamelHolder.getObjectByName('shellCrown');
-    if (crown) crown.visible = true;
+    const toggled: [THREE.Object3D, boolean][] = [];
+    if (all) {
+      const show = (o: THREE.Object3D | undefined) => {
+        if (!o) return;
+        toggled.push([o, o.visible]);
+        o.visible = true;
+      };
+      [this.arcade, this.cutGroup, this.quarterGroup, this.liftGroup, this.wholeGroup].forEach(show);
+      this.wholeGroup.children.forEach(show);
+      this.enamelHolder.children.forEach(show);
+    }
+    // o compile do three percorre todos os objetos (inclusive os ocultos): no
+    // 1º quadro basta desenhar o que está à vista, que compila só esses shaders
+    if (!all) return;
     try {
       await this.renderer.compileAsync(this.scene, this.camera);
     } catch {
       /* navegadores sem compilação assíncrona compilam no primeiro quadro */
     }
-    this.arcade.visible = prev;
+    // o quadro seguinte reaplica a visibilidade pelo estado; aqui só desfaz o que foi ligado
+    for (const [o, v] of toggled) o.visible = v;
   }
 
   /**
@@ -440,6 +462,7 @@ export class Stage3D {
     this.wholeGroup.getObjectByName('shell')!.visible = useShell;
     this.wholeGroup.getObjectByName('coreWhole')!.visible = !useShell;
     this.enamelHolder.getObjectByName('shellCrown')!.visible = !useShell;
+    this.enamelHolder.getObjectByName('enamelInner')!.visible = !useShell;
     this.liftGroup.visible = !useShell;
 
     const q = smoothstep(CUT0, 1, cut);
@@ -474,6 +497,7 @@ export class Stage3D {
     setFade('coreCut', st.coreFade);
     setFade('enamelShell', st.enamelFade);
     setFade('coreShell', st.coreFade);
+    setFade('enamelInner', st.enamelFade);
     setFade('pulp', st.coreFade * 0.6);
     this.quarterMats.forEach((m) => m.userData.uniforms.uBg.value.copy(bgNow));
     const pulp = this.mats.pulp;

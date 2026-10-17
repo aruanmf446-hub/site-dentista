@@ -219,6 +219,25 @@ const total = segments.reduce((acc, s) => acc + s.len, 0);
   html.is-cinema.stage-ready .hero__tooth-svg {
     visibility: hidden;
   }
+  /* enquanto o 3D prepara (fração de segundo), nada de dente 2D: só um brilho
+     suave e parado no arco (animação infinita aqui atrasava o 3D: o navegador
+     recompõe a tela a cada quadro); se demorar (aparelho lento), o desenho
+     volta (stage-slow) */
+  html.is-cinema:not(.stage-ready):not(.stage-slow) .hero__tooth-svg {
+    opacity: 0;
+  }
+  html.is-cinema:not(.stage-ready):not(.stage-slow) .hero__tooth::after {
+    content: '';
+    position: absolute;
+    left: 50%;
+    top: 46%;
+    width: 46%;
+    aspect-ratio: 1;
+    translate: -50% -50%;
+    border-radius: 50%;
+    background: radial-gradient(closest-side, rgba(255, 255, 255, 0.16), rgba(255, 255, 255, 0));
+    pointer-events: none;
+  }
   html.is-cinema.stage-ready .esp .view-fallback {
     visibility: hidden;
   }

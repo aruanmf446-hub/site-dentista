@@ -67,6 +67,12 @@ export async function bootExperience(): Promise<void> {
   html.dataset.experience = cinema ? 'cinema' : 'stacked';
   try {
     if (cinema) {
+      // a geometria começa já (worker), em paralelo ao download do restante do 3D
+      void import('./shared').then((m) => m.startAssets(html.classList.contains('cine-compact') ? 'compact' : 'cinema'));
+      // aparelho lento: se o 3D não ficar pronto em 6 s, o desenho do dente volta no lugar do brilho
+      window.setTimeout(() => {
+        if (!html.classList.contains('stage-ready')) html.classList.add('stage-slow');
+      }, 6000);
       const { initCinema } = await import('./cinema');
       await initCinema();
     } else {

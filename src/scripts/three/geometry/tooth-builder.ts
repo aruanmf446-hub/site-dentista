@@ -32,7 +32,15 @@ export interface MeshData {
 }
 
 export interface ToothData {
-  whole: { shell: MeshData; enamel: MeshData; core: MeshData };
+  whole: {
+    shell: MeshData;
+    enamel: MeshData;
+    core: MeshData;
+    /** superfície da dentina (grupo 0 = coroa, 1 = raiz): parede à vista com o esmalte erguido */
+    dentin: MeshData;
+    /** a mesma superfície vista por dentro do esmalte (cor do interior do esmalte) */
+    enamelInner: MeshData;
+  };
   cut: { enamel: MeshData; core: MeshData; pulp: MeshData };
   quarter: { enamel: MeshData; core: MeshData; pulp: MeshData };
   crowns: { premolar: MeshData; canine: MeshData; incisor: MeshData };
@@ -759,17 +767,46 @@ function splitGroups(m: MeshData, crownValue: (x: number, y: number) => number):
 export interface BuildOptions {
   /** tamanho da célula em unidades de mundo (menor = mais detalhe) */
   cell: number;
+  /**
+   * Só a casca (o que o hero mostra): fica pronta em uma fração do tempo e o
+   * dente 3D aparece logo; as demais peças chegam em seguida.
+   */
+  shellOnly?: boolean;
 }
+
+const emptyMesh = (): MeshData => ({
+  positions: new Float32Array(0),
+  normals: new Float32Array(0),
+  colors: new Float32Array(0),
+  indices: new Uint32Array(0),
+});
+
+const fieldCache = new Map<string, Field2D>();
 
 export function buildTooth(opts: BuildOptions): ToothData {
   const t0 = typeof performance !== 'undefined' ? performance.now() : Date.now();
   const step = opts.cell > 0.011 ? 2.5 : 2;
   const nu = Math.ceil(340 / step) + 1;
   const nv = Math.ceil(500 / step) + 1;
+  // campos 2D guardados entre chamadas (o worker gera a casca e depois o resto)
+  // e só calculados quando usados: a casca só precisa do contorno externo
+  const field = (k: 'P' | 'D' | 'Q') => {
+    const key = `${k}:${step}`;
+    let f = fieldCache.get(key);
+    if (!f) {
+      f = buildField(pathToPolyline(PATHS[k]), 30, 30, step, nu, nv, k === 'Q' ? 0 : 2);
+      fieldCache.set(key, f);
+    }
+    return f;
+  };
   const F = {
-    P: buildField(pathToPolyline(PATHS.P), 30, 30, step, nu, nv, 2),
-    D: buildField(pathToPolyline(PATHS.D), 30, 30, step, nu, nv, 2),
-    Q: buildField(pathToPolyline(PATHS.Q), 30, 30, step, nu, nv, 0),
+    P: field('P'),
+    get D() {
+      return field('D');
+    },
+    get Q() {
+      return field('Q');
+    },
   };
 
   const fP: Fn = (x, y, z) => inflate(F.P, outerProfile, x, y, z);
@@ -798,9 +835,6 @@ export function buildTooth(opts: BuildOptions): ToothData {
   const hp = h * 0.6;
   const pulpG = makeGrid([-0.15, -0.44, -0.12], [0.15, 0.33, 0.12], hp);
   fillGrid(shellG, fP);
-  fillGrid(enamelG, fEnamel);
-  fillGrid(coreG, fCore);
-  fillGrid(pulpG, fQ);
 
   const cutMain = (g: Grid) => mapGrid(g, (v, x, _y, z) => Math.max(v, Math.min(x, z)));
   const cutQuarter = (g: Grid) => mapGrid(g, (v, x, _y, z) => Math.max(v, -x, -z));
@@ -879,7 +913,7 @@ export function buildTooth(opts: BuildOptions): ToothData {
       fP,
       cs,
       (x, y, z) => -fD(x, y, z),
-    ], cs, [0, 2]);
+    ], cs, [0, 1, 2]);
   };
 
   const coreMesh = (g: Grid, mode: 0 | 1 | -1) => {
@@ -913,7 +947,7 @@ export function buildTooth(opts: BuildOptions): ToothData {
     }, mode ? g.h * 1.3 : 0, (x, y, z) => {
       const c = cs(x, y, z);
       return Math.max(Math.min(Math.max(fD(x, y, z), c), Math.max(fP(x, y, z), -c)), -fQ(x, y, z));
-    }, mode ? s : 0, g.h, true, [fD, fP, cs, (x, y, z) => -cs(x, y, z)], cs, [1]);
+    }, mode ? s : 0, g.h, true, [fD, fP, cs, (x, y, z) => -cs(x, y, z)], cs, [0, 1, 3]);
   };
 
   const pulpMesh = (g: Grid, mode: 0 | 1 | -1) => {
@@ -933,6 +967,51 @@ export function buildTooth(opts: BuildOptions): ToothData {
     finalize(surfaceNets(shellG), [{ f: fP, s: 1, color: shellColor }], () => 0, 0, fP, 0, shellG.h, false),
     (x, y) => cs(x, y, 0),
   );
+
+  const anchors: Record<string, [number, number, number]> = {
+    esmalte: [toWorldX(318), toWorldY(152), 0],
+    polpa: [toWorldX(222), toWorldY(214), 0],
+    dentina: [toWorldX(279), toWorldY(300), 0],
+    raiz: [toWorldX(262), toWorldY(420), 0],
+  };
+  const meta = () => ({
+    top: toWorldY(68),
+    bottom: toWorldY(495),
+    cervicalY: toWorldY(263),
+    crownWidth: (330 - 70) * K,
+    anchors,
+    ms: Math.round((typeof performance !== 'undefined' ? performance.now() : Date.now()) - t0),
+  });
+  if (opts.shellOnly) {
+    const e = emptyMesh;
+    return {
+      whole: { shell, enamel: e(), core: e(), dentin: e(), enamelInner: e() },
+      cut: { enamel: e(), core: e(), pulp: e() },
+      quarter: { enamel: e(), core: e(), pulp: e() },
+      crowns: { premolar: e(), canine: e(), incisor: e() },
+      meta: meta(),
+    };
+  }
+  fillGrid(enamelG, fEnamel);
+  fillGrid(coreG, fCore);
+  fillGrid(pulpG, fQ);
+
+  // parede da dentina e interior do esmalte: a superfície fD inteira, lisa como
+  // a casca (projeção pela normal) e dividida exatamente na curva cervical; só a
+  // parte da coroa aparece. Substituem as faces da grade, serrilhadas na borda.
+  const dentinG = makeGrid([-0.38, -0.6, -0.32], [0.38, 0.57, 0.32], h);
+  fillGrid(dentinG, fD);
+  const dentin = splitGroups(
+    finalize(surfaceNets(dentinG), [{ f: fD, s: 1, color: coreOuterColor }], () => 0, 0, fD, 0, dentinG.h, false),
+    (x, y) => cs(x, y, 0),
+  );
+  const enamelInner: MeshData = {
+    ...dentin,
+    positions: dentin.positions.slice(),
+    normals: dentin.normals.slice(),
+    indices: dentin.indices.slice(),
+    colors: new Float32Array(dentin.colors.length).map((_, i) => C.enamelInner[i % 3]!),
+  };
 
   // faces de corte exatas: plano z = 0 (x ≥ 0) e plano x = 0 (z ≥ 0); o quadrante
   // removido usa as mesmas regiões com a normal invertida
@@ -974,7 +1053,13 @@ export function buildTooth(opts: BuildOptions): ToothData {
   const ringEnamel = ring(-1, enamelFace); // base do esmalte, voltada para baixo
 
   // o anel inteiro entra em todas as peças: o recorte na GPU deixa só a parte de cada uma
-  const whole = { shell, enamel: merge(enamelMesh(enamelG, 0), ringEnamel), core: merge(coreMesh(coreG, 0), ringCore) };
+  const whole = {
+    shell,
+    enamel: merge(enamelMesh(enamelG, 0), ringEnamel),
+    core: merge(coreMesh(coreG, 0), ringCore),
+    dentin,
+    enamelInner,
+  };
   const cut = {
     enamel: merge(enamelMesh(cutMain(enamelG), 1), capMain.enamel, ringEnamel),
     core: merge(coreMesh(cutMain(coreG), 1), capMain.core, ringCore),
@@ -987,28 +1072,7 @@ export function buildTooth(opts: BuildOptions): ToothData {
   };
 
   const crowns = buildCrowns(Math.max(0.03, h * 3.2));
-
-  const anchors: Record<string, [number, number, number]> = {
-    esmalte: [toWorldX(318), toWorldY(152), 0],
-    polpa: [toWorldX(222), toWorldY(214), 0],
-    dentina: [toWorldX(279), toWorldY(300), 0],
-    raiz: [toWorldX(262), toWorldY(420), 0],
-  };
-  const t1 = typeof performance !== 'undefined' ? performance.now() : Date.now();
-  return {
-    whole,
-    cut,
-    quarter,
-    crowns,
-    meta: {
-      top: toWorldY(68),
-      bottom: toWorldY(495),
-      cervicalY: toWorldY(263),
-      crownWidth: (330 - 70) * K,
-      anchors,
-      ms: Math.round(t1 - t0),
-    },
-  };
+  return { whole, cut, quarter, crowns, meta: meta() };
 }
 
 /* ------------------------------------------------------------------ */

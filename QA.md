@@ -18,8 +18,25 @@ escuras no dente ao fechar (fim de Tratamentos → Especialidades) e o ícone do
 | Dentes de serra no degrau cervical (esmalte erguido) | anel estreito vindo da grade | anel cervical exato (a superfície cs = 0 também é uma "face" 2D) sobre o anel da grade |
 | Ícone do WhatsApp | glifo desenhado à mão com o fone torto | glifo de traço do Tabler Icons (brand-whatsapp, MIT) |
 
+| Parede da dentina e interior do esmalte serrilhados (esmalte erguido) | faces da grade 3D | a superfície da dentina inteira, lisa como a casca e dividida exatamente na curva cervical: por fora é a parede da dentina, por dentro do esmalte é o interior dele |
+
 Evidências: `docs/qa/rodada5-corte-antes-depois.jpg` (quadro B, produção × agora),
-`docs/qa/rodada5-fechando-antes-depois.jpg`. Tempo de geração da malha: +~10%.
+`docs/qa/rodada5-fechando-antes-depois.jpg`.
+
+**Dente 3D de cara (sem o desenho 2D antes).** Medido com `scripts/qa/startup-time.mjs`
+(tempo até o 1º quadro 3D; GPU emulada por software, 2 execuções):
+
+| | 1ª abertura | 2ª abertura |
+|---|---|---|
+| antes | 3,7 s (desenho 2D até lá) | 2,4 s |
+| agora | 2,4 s (só um brilho no arco) | 1,4 s |
+
+O que mudou: a geometria começa no boot (worker, em paralelo ao download do 3D), sem esperar
+o `load` + ociosidade; vem primeiro só a casca (o que o hero mostra, ~1/4 do tempo) e o
+restante depois do 1º quadro (até lá a cena mostra o dente inteiro); o 1º quadro compila só
+os shaders à vista e o resto compila enquanto o visitante lê o hero. Achado: uma animação
+infinita de "carregando" atrasava o 3D em ~5 s nesta máquina (o navegador recompõe a tela a
+cada quadro) — o brilho ficou parado. Se o 3D não ficar pronto em 6 s, o desenho volta.
 
 ## Rodada 4 — arcada sobre o hero e pontilhado na silhueta (17/10/2026)
 

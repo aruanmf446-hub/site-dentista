@@ -7,6 +7,7 @@
  * Nós (mesh) com estes nomes; os ausentes caem no procedural:
  *   shell                              — dente inteiro em malha única (grupo 0 = coroa, 1 = raiz)
  *   enamel, core                       — dente inteiro em camadas (esmalte separável)
+ *   dentin, enamel_inner               — superfície da dentina (grupos coroa/raiz), por fora e por dentro do esmalte
  *   enamel_cut, core_cut, pulp_cut     — dente com o quadrante (x>0, z>0) removido
  *   enamel_quarter, core_quarter, pulp_quarter — o quadrante removido
  *   crown_premolar, crown_canine, crown_incisor — coroas da arcada (largura ≈ 1, base em y = 0)
@@ -18,6 +19,8 @@ export type PartName =
   | 'shell'
   | 'enamel'
   | 'core'
+  | 'dentin'
+  | 'enamel_inner'
   | 'enamel_cut'
   | 'core_cut'
   | 'pulp_cut'
@@ -30,6 +33,8 @@ export type PartName =
 
 export interface ToothAssets {
   parts: Record<PartName, THREE.BufferGeometry>;
+  /** só a casca (o restante ainda está sendo gerado) */
+  partial?: boolean;
   meta: ToothData['meta'];
   source: 'procedural' | 'glb';
 }
@@ -48,11 +53,14 @@ export function toGeometry(m: MeshData): THREE.BufferGeometry {
 export function assetsFromData(d: ToothData): ToothAssets {
   return {
     source: 'procedural',
+    partial: d.cut.core.indices.length === 0,
     meta: d.meta,
     parts: {
       shell: toGeometry(d.whole.shell),
       enamel: toGeometry(d.whole.enamel),
       core: toGeometry(d.whole.core),
+      dentin: toGeometry(d.whole.dentin),
+      enamel_inner: toGeometry(d.whole.enamelInner),
       enamel_cut: toGeometry(d.cut.enamel),
       core_cut: toGeometry(d.cut.core),
       pulp_cut: toGeometry(d.cut.pulp),
@@ -67,9 +75,25 @@ export function assetsFromData(d: ToothData): ToothAssets {
 }
 
 export interface ProceduralOptions {
-  /** células em ordem: a primeira aparece rápido, as seguintes refinam */
+  /**
+   * células em ordem: a primeira aparece rápido, as seguintes refinam. Antes
+   * de tudo vem só a casca na primeira célula (o dente do hero em ~1/5 do tempo).
+   */
   cells: number[];
+  /** false: a primeira entrega já vem completa (ex.: base do GLB) */
+  shellFirst?: boolean;
   onRefine?: (assets: ToothAssets) => void;
+}
+
+let resumeJobs: (() => void) | null = null;
+/**
+ * Libera o restante da geometria depois da casca. Gerar tudo junto disputava
+ * a CPU com a compilação dos shaders e o 1º quadro (o dente demorava a aparecer).
+ */
+export function resumeProcedural(): void {
+  const r = resumeJobs;
+  resumeJobs = null;
+  r?.();
 }
 
 /** Gera a geometria num Web Worker (fallback: thread principal). */
@@ -85,10 +109,17 @@ export function loadProcedural(opts: ProceduralOptions): Promise<ToothAssets> {
     };
     try {
       const worker = new Worker(new URL('./tooth.worker.ts', import.meta.url), { type: 'module' });
-      let pending = opts.cells.length;
+      const shellFirst = opts.shellFirst !== false;
+      const rest = opts.cells.map((cell) => ({ cell }));
+      let pending = rest.length + (shellFirst ? 1 : 0);
       worker.onmessage = (e: MessageEvent<{ data: ToothData }>) => {
         handle(e.data.data);
         if (--pending === 0) worker.terminate();
+        // a casca chegou: o resto vem quando a cena pedir (1º quadro) ou em 2 s
+        if (shellFirst && pending === rest.length) {
+          resumeJobs = () => worker.postMessage({ jobs: rest });
+          window.setTimeout(resumeProcedural, 2000);
+        }
       };
       worker.onerror = (err) => {
         worker.terminate();
@@ -98,7 +129,7 @@ export function loadProcedural(opts: ProceduralOptions): Promise<ToothAssets> {
             .catch(reject);
         } else console.warn('[cena] refinamento falhou', err);
       };
-      worker.postMessage({ cells: opts.cells });
+      worker.postMessage({ jobs: shellFirst ? [{ cell: opts.cells[0]!, shellOnly: true }] : rest });
     } catch {
       import('./geometry/tooth-builder')
         .then((m) => handle(m.buildTooth({ cell: opts.cells[0]! })))

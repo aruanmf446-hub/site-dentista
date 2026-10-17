@@ -36,9 +36,10 @@ export function qualityCells(mode: 'cinema' | 'compact' | 'stacked'): number[] {
 
 export function loadAssets(mode: 'cinema' | 'compact' | 'stacked', onRefine: (a: ToothAssets) => void): Promise<ToothAssets> {
   const model = document.querySelector<HTMLElement>('[data-cinema]')?.dataset.model;
-  const procedural = () => loadProcedural({ cells: qualityCells(mode), onRefine });
+  // o empilhado mostra corte e arcada já nas vistas paradas: tudo de uma vez
+  const procedural = () => loadProcedural({ cells: qualityCells(mode), onRefine, shellFirst: mode !== 'stacked' });
   if (model) {
-    return loadGlb(model, () => loadProcedural({ cells: [0.016] })).catch((err) => {
+    return loadGlb(model, () => loadProcedural({ cells: [0.016], shellFirst: false })).catch((err) => {
       console.warn('[cena] GLB indisponível, usando geometria procedural:', err);
       return procedural();
     });
@@ -57,4 +58,38 @@ export function readPresets(): SpecPreset[] {
 
 export function dpr(max: number): number {
   return Math.min(window.devicePixelRatio || 1, max);
+}
+
+/**
+ * Geometria iniciada cedo (no boot, antes de baixar o restante do 3D): o worker
+ * trabalha enquanto a página carrega. Quem montar a cena pega o resultado com
+ * `takeAssets`; refinamentos que chegarem antes ficam guardados (só o último).
+ */
+interface EarlyAssets {
+  mode: 'cinema' | 'compact' | 'stacked';
+  promise: Promise<ToothAssets>;
+  refined: ToothAssets | null;
+  listener: ((a: ToothAssets) => void) | null;
+}
+let early: EarlyAssets | null = null;
+
+export function startAssets(mode: EarlyAssets['mode']): EarlyAssets {
+  if (early && early.mode === mode) return early;
+  const e: EarlyAssets = { mode, promise: Promise.resolve(null as unknown as ToothAssets), refined: null, listener: null };
+  e.promise = loadAssets(mode, (a) => {
+    if (e.listener) e.listener(a);
+    else e.refined = a;
+  });
+  early = e;
+  return e;
+}
+
+/** Primeira geometria disponível (a melhor já recebida) + aviso dos refinamentos seguintes. */
+export async function takeAssets(mode: EarlyAssets['mode'], onRefine: (a: ToothAssets) => void): Promise<ToothAssets> {
+  const e = startAssets(mode);
+  const first = await e.promise;
+  e.listener = onRefine;
+  const best = e.refined ?? first;
+  e.refined = null;
+  return best;
 }
