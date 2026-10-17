@@ -73,6 +73,8 @@ export class Stage3D {
    */
   private rootCut = [new THREE.Plane(), new THREE.Plane()];
   private enamelCutPlanes = [new THREE.Plane(), new THREE.Plane()];
+  /** o quadrante removido: só x > 0 e z > 0 (casca lisa recortada também nele) */
+  private quarterPlanes = [new THREE.Plane(), new THREE.Plane()];
   /** casca lisa (coroa/raiz) usada quando o dente está cortado ou o esmalte erguido */
   private liftGroup = new THREE.Group();
   private hiddenMat = new THREE.MeshBasicMaterial({ visible: false });
@@ -157,7 +159,9 @@ export class Stage3D {
     this.enamelPivot.position.set(0, pivotY, 0);
     this.enamelHolder.position.set(0, -pivotY, 0);
     const enamelWhole = mesh(P.enamel, mk('enamel', 'enamel'));
-    const enamelCut = mesh(P.enamel_cut, mk('enamel', 'enamelCut', { side: THREE.DoubleSide }));
+    // peças cortadas: o interior é recortado na GPU pelos mesmos planos da casca
+    // (nada passa da face de corte, que vem com contorno exato do construtor)
+    const enamelCut = mesh(P.enamel_cut, mk('enamel', 'enamelCut', { side: THREE.DoubleSide, clippingPlanes: this.enamelCutPlanes, clipIntersection: true }));
     enamelWhole.name = 'enamelWhole';
     enamelCut.name = 'enamelCut';
     this.enamelHolder.add(enamelWhole, enamelCut);
@@ -168,7 +172,8 @@ export class Stage3D {
     shell.name = 'shell';
     shell.frustumCulled = false;
     this.wholeGroup.add(coreWhole, shell);
-    this.cutGroup.add(mesh(P.core_cut, mk('core', 'coreCut')), mesh(P.pulp_cut, mk('pulp', 'pulp')));
+    const rootClip = { clippingPlanes: this.rootCut, clipIntersection: true };
+    this.cutGroup.add(mesh(P.core_cut, mk('core', 'coreCut', rootClip)), mesh(P.pulp_cut, mk('pulp', 'pulp', rootClip)));
     // superfície externa do dente cortado/aberto = a mesma casca lisa do dente
     // inteiro (coroa no esmalte, raiz no núcleo), recortada na GPU pelo corte;
     // as malhas de corte só trazem as faces planas e o interior
@@ -186,12 +191,16 @@ export class Stage3D {
 
     if (!this.quarterMats.length) {
       this.quarterMats = [
-        makeMaterial('enamel', this.bgDark, { transparent: true }),
-        makeMaterial('core', this.bgDark, { transparent: true }),
-        makeMaterial('pulp', this.bgDark, { transparent: true }),
+        makeMaterial('enamel', this.bgDark, { transparent: true, clippingPlanes: this.quarterPlanes }),
+        makeMaterial('core', this.bgDark, { transparent: true, clippingPlanes: this.quarterPlanes }),
+        makeMaterial('pulp', this.bgDark, { transparent: true, clippingPlanes: this.quarterPlanes }),
       ];
     }
+    const quarterShell = new THREE.Mesh(P.shell, [this.quarterMats[0]!, this.quarterMats[1]!]);
+    quarterShell.frustumCulled = false;
+    quarterShell.renderOrder = -1;
     this.quarterGroup.add(
+      quarterShell,
       mesh(P.enamel_quarter, this.quarterMats[0]!),
       mesh(P.core_quarter, this.quarterMats[1]!),
       mesh(P.pulp_quarter, this.quarterMats[2]!),
@@ -361,21 +370,29 @@ export class Stage3D {
     this.arcade.visible = prev;
   }
 
-  /** Planos do corte em coordenadas de mundo (a casca é recortada na GPU). */
+  /**
+   * Planos do corte em coordenadas de mundo (a casca é recortada na GPU). A
+   * folga EPS deixa as faces de corte (exatamente em x = 0 / z = 0) sempre do
+   * lado que fica, sem cintilar.
+   */
   private updateCutPlanes(active: boolean): void {
-    const set = (planes: THREE.Plane[], frame: THREE.Object3D) => {
+    const EPS = 2e-4;
+    const set = (planes: THREE.Plane[], frame: THREE.Object3D, s: 1 | -1) => {
       if (!active) {
-        // longe de tudo: nada fica do lado negativo dos dois planos
-        planes[0]!.set(new THREE.Vector3(-1, 0, 0), 1e3);
-        planes[1]!.set(new THREE.Vector3(0, 0, -1), 1e3);
+        // longe de tudo: nada fica do lado negativo dos planos
+        planes[0]!.set(new THREE.Vector3(-s, 0, 0), 1e3);
+        planes[1]!.set(new THREE.Vector3(0, 0, -s), 1e3);
         return;
       }
       frame.updateWorldMatrix(true, false);
-      planes[0]!.set(new THREE.Vector3(-1, 0, 0), 0).applyMatrix4(frame.matrixWorld);
-      planes[1]!.set(new THREE.Vector3(0, 0, -1), 0).applyMatrix4(frame.matrixWorld);
+      planes[0]!.set(new THREE.Vector3(-s, 0, 0), EPS).applyMatrix4(frame.matrixWorld);
+      planes[1]!.set(new THREE.Vector3(0, 0, -s), EPS).applyMatrix4(frame.matrixWorld);
     };
-    set(this.rootCut, this.toothRoot);
-    set(this.enamelCutPlanes, this.enamelHolder);
+    // peça principal: some só onde x > 0 E z > 0 (interseção)
+    set(this.rootCut, this.toothRoot, 1);
+    set(this.enamelCutPlanes, this.enamelHolder, 1);
+    // quadrante: some onde x < 0 OU z < 0 (união, o padrão do three)
+    set(this.quarterPlanes, this.quarterGroup, -1);
   }
 
   setPresets(p: SpecPreset[]): void {
@@ -407,7 +424,10 @@ export class Stage3D {
 
     /* ---------- dente ---------- */
     const cut = clamp01(st.cut);
-    const showCut = cut > 0.001;
+    // o quadrante só sai do lugar depois de 6% do corte; abaixo disso o dente
+    // inteiro assume (com as peças quase encostadas a junção virava uma costura)
+    const CUT0 = 0.06;
+    const showCut = cut > CUT0;
     this.wholeGroup.visible = !showCut;
     this.cutGroup.visible = showCut;
     this.quarterGroup.visible = showCut && cut < 0.999;
@@ -422,14 +442,13 @@ export class Stage3D {
     this.enamelHolder.getObjectByName('shellCrown')!.visible = !useShell;
     this.liftGroup.visible = !useShell;
 
-    const q = smoothstep(0, 1, cut);
+    const q = smoothstep(CUT0, 1, cut);
     this.quarterGroup.position.set(0.55 * q, 0.04 * q, 0.9 * q);
     this.quarterGroup.rotation.set(0, 0.5 * q, -0.2 * q);
     const qOpacity = 1 - smoothstep(0.08, 0.6, cut);
-    this.quarterMats.forEach((m) => {
-      m.opacity = qOpacity;
-      m.depthWrite = qOpacity > 0.98;
-    });
+    // grava profundidade mesmo esmaecendo: com a casca desenhada primeiro
+    // (renderOrder), o interior do quadrante não aparece através dela
+    this.quarterMats.forEach((m) => (m.opacity = qOpacity));
 
     this.enamelPivot.position.y = 0.3 + st.enamelLift;
     this.enamelPivot.rotation.z = st.enamelTilt * DEG;

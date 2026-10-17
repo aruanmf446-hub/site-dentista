@@ -3,6 +3,24 @@
 Execução registrada em 16/10/2026, nesta branch, no ambiente de nuvem do Claude Code
 (Linux, Chromium 141 do Playwright 1.64, **WebGL por software — SwiftShader**, sem GPU).
 
+## Rodada 5 — dente cortado em alta qualidade e ícone do WhatsApp (17/10/2026)
+
+Relatado no preview da branch: faces do corte serrilhadas (quadros B e C), costura e manchas
+escuras no dente ao fechar (fim de Tratamentos → Especialidades) e o ícone do WhatsApp
+"quebrado".
+
+| Problema | Causa | Correção |
+|---|---|---|
+| Borda serrilhada nas faces do corte (esmalte, dentina, polpa) | as faces planas vinham da grade 3D: vértices em degraus de 1 célula | faces refeitas por contorno exato: grade 2D fina no próprio plano (marching squares) e cada ponto da borda achado por bissecção na função do sólido |
+| Pontas/franjas do interior passando da face de corte | malhas internas da grade | interior recortado na GPU pelos mesmos planos da casca |
+| Costura vertical e manchas escuras ao fechar | o quadrante que volta usava a própria superfície externa (da grade, sem projeção) | o quadrante usa a mesma casca lisa, recortada na GPU (só x > 0 e z > 0); as faces dele também são exatas; abaixo de 6% do corte o dente inteiro assume (sem junção à vista) |
+| Interior do quadrante aparecendo enquanto ele esmaece | transparência sem gravar profundidade | casca do quadrante desenhada primeiro, gravando profundidade |
+| Dentes de serra no degrau cervical (esmalte erguido) | anel estreito vindo da grade | anel cervical exato (a superfície cs = 0 também é uma "face" 2D) sobre o anel da grade |
+| Ícone do WhatsApp | glifo desenhado à mão com o fone torto | glifo de traço do Tabler Icons (brand-whatsapp, MIT) |
+
+Evidências: `docs/qa/rodada5-corte-antes-depois.jpg` (quadro B, produção × agora),
+`docs/qa/rodada5-fechando-antes-depois.jpg`. Tempo de geração da malha: +~10%.
+
 ## Rodada 4 — arcada sobre o hero e pontilhado na silhueta (17/10/2026)
 
 **Arcada sobre o hero.** Não era o 3D: era a arcada em CSS das especialidades (desenho de

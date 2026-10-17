@@ -265,10 +265,11 @@ function finalize(
       const a = indices[t]!,
         b = indices[t + 1]!,
         c = indices[t + 2]!;
-      // triângulos das faces planas do corte ficam sempre
       const plano = (k: number) => P[3 * k] === 0 || P[3 * k + 2] === 0;
       const noPlano =
         (P[3 * a] === 0 && P[3 * b] === 0 && P[3 * c] === 0) || (P[3 * a + 2] === 0 && P[3 * b + 2] === 0 && P[3 * c + 2] === 0);
+      // faces planas do corte saem: são refeitas pelo contorno exato (capMesh)
+      if (noPlano && snap > 0) continue;
       const nFora = +fora.has(cls[a]!) + +fora.has(cls[b]!) + +fora.has(cls[c]!);
       // faixa junto à borda: maioria na superfície externa e fora do plano → sai
       if (!noPlano && (nFora === 3 || (nFora === 2 && !(plano(a) && plano(b) && plano(c))))) continue;
@@ -561,6 +562,136 @@ function projectCutOutline(P: Float32Array, I: Uint32Array, solid: Fn, cell: num
 }
 
 /**
+ * Face de corte (ou anel cervical) com contorno exato. A face vinha da grade 3D (vértices
+ * em degraus de 1 célula → borda serrilhada). Aqui a região f < 0 do plano é
+ * poligonizada numa grade 2D fina (marching squares) e cada ponto da borda é
+ * achado por bissecção na própria função: contorno liso na escala do pixel.
+ * `toP` leva (a, b) do plano para o espaço do dente; `n` é a normal da face.
+ */
+function capMesh(
+  f2: (a: number, b: number) => number,
+  toP: (a: number, b: number) => Vec3,
+  n: Vec3 | ((x: number, y: number, z: number) => Vec3),
+  color: (x: number, y: number, z: number) => Vec3,
+  [a0, a1, b0, b1]: [number, number, number, number],
+  st: number,
+): MeshData {
+  const nAt = typeof n === 'function' ? n : () => n;
+  const na = Math.ceil((a1 - a0) / st) + 1;
+  const nb = Math.ceil((b1 - b0) / st) + 1;
+  const V = new Float64Array(na * nb);
+  for (let j = 0; j < nb; j++) for (let i = 0; i < na; i++) V[j * na + i] = f2(a0 + i * st, b0 + j * st);
+  const pos: number[] = [];
+  const col: number[] = [];
+  const idx: number[] = [];
+  const ids = new Map<number, number>();
+  const vert = (key: number, a: number, b: number) => {
+    const got = ids.get(key);
+    if (got !== undefined) return got;
+    const p = toP(a, b);
+    const c = color(p[0], p[1], p[2]);
+    const id = pos.length / 3;
+    pos.push(p[0], p[1], p[2]);
+    col.push(c[0], c[1], c[2]);
+    ids.set(key, id);
+    return id;
+  };
+  const node = (i: number, j: number) => vert(j * na + i, a0 + i * st, b0 + j * st);
+  // ponto da borda numa aresta da grade (bissecção na função exata)
+  const edge = (i: number, j: number, horiz: boolean) => {
+    const key = na * nb + 2 * (j * na + i) + (horiz ? 0 : 1);
+    if (ids.has(key)) return ids.get(key)!;
+    let ta = 0,
+      tb = 1;
+    const ax = a0 + i * st,
+      bx = b0 + j * st;
+    const at = (t: number) => (horiz ? f2(ax + t * st, bx) : f2(ax, bx + t * st));
+    const fa = horiz ? V[j * na + i]! : V[j * na + i]!;
+    for (let k = 0; k < 18; k++) {
+      const tm = (ta + tb) / 2;
+      if (at(tm) < 0 === fa < 0) ta = tm;
+      else tb = tm;
+    }
+    const t = (ta + tb) / 2;
+    return vert(key, horiz ? ax + t * st : ax, horiz ? bx : bx + t * st);
+  };
+  const tri = (p: number, q: number, r: number) => {
+    const ux = pos[3 * q]! - pos[3 * p]!,
+      uy = pos[3 * q + 1]! - pos[3 * p + 1]!,
+      uz = pos[3 * q + 2]! - pos[3 * p + 2]!;
+    const vx = pos[3 * r]! - pos[3 * p]!,
+      vy = pos[3 * r + 1]! - pos[3 * p + 1]!,
+      vz = pos[3 * r + 2]! - pos[3 * p + 2]!;
+    const m = nAt(pos[3 * p]!, pos[3 * p + 1]!, pos[3 * p + 2]!);
+    const d = (uy * vz - uz * vy) * m[0] + (uz * vx - ux * vz) * m[1] + (ux * vy - uy * vx) * m[2];
+    if (d === 0) return;
+    if (d > 0) idx.push(p, q, r);
+    else idx.push(p, r, q);
+  };
+  const fan = (poly: number[]) => {
+    for (let k = 1; k + 1 < poly.length; k++) tri(poly[0]!, poly[k]!, poly[k + 1]!);
+  };
+  for (let j = 0; j + 1 < nb; j++)
+    for (let i = 0; i + 1 < na; i++) {
+      // cantos em ordem: (i,j) (i+1,j) (i+1,j+1) (i,j+1)
+      const cs = [
+        [i, j],
+        [i + 1, j],
+        [i + 1, j + 1],
+        [i, j + 1],
+      ] as const;
+      const v = cs.map(([x, y]) => V[y * na + x]!);
+      const inside = v.map((x) => x < 0);
+      const count = inside.filter(Boolean).length;
+      if (!count) continue;
+      // aresta k liga o canto k ao k+1
+      const edgeOf = (k: number) =>
+        k === 0 ? edge(i, j, true) : k === 1 ? edge(i + 1, j, false) : k === 2 ? edge(i, j + 1, true) : edge(i, j, false);
+      const sela = count === 2 && inside[0] === inside[2];
+      if (sela && f2(a0 + (i + 0.5) * st, b0 + (j + 0.5) * st) >= 0) {
+        // dois cantos opostos separados: um triângulo em cada
+        for (let k = 0; k < 4; k++) if (inside[k]) fan([node(cs[k]![0], cs[k]![1]), edgeOf(k), edgeOf((k + 3) % 4)]);
+        continue;
+      }
+      const poly: number[] = [];
+      for (let k = 0; k < 4; k++) {
+        if (inside[k]) poly.push(node(cs[k]![0], cs[k]![1]));
+        if (inside[k] !== inside[(k + 1) % 4]) poly.push(edgeOf(k));
+      }
+      fan(poly);
+    }
+  const nv = pos.length / 3;
+  const normals = new Float32Array(nv * 3);
+  for (let k = 0; k < nv; k++) normals.set(nAt(pos[3 * k]!, pos[3 * k + 1]!, pos[3 * k + 2]!), 3 * k);
+  return { positions: Float32Array.from(pos), normals, colors: Float32Array.from(col), indices: Uint32Array.from(idx) };
+}
+
+/** Junta malhas (sem grupos). */
+function merge(...ms: MeshData[]): MeshData {
+  let nv = 0,
+    ni = 0;
+  for (const m of ms) {
+    nv += m.positions.length;
+    ni += m.indices.length;
+  }
+  const positions = new Float32Array(nv),
+    normals = new Float32Array(nv),
+    colors = new Float32Array(nv),
+    indices = new Uint32Array(ni);
+  let ov = 0,
+    oi = 0;
+  for (const m of ms) {
+    positions.set(m.positions, ov);
+    normals.set(m.normals, ov);
+    colors.set(m.colors, ov);
+    for (let k = 0; k < m.indices.length; k++) indices[oi + k] = m.indices[k]! + ov / 3;
+    ov += m.positions.length;
+    oi += m.indices.length;
+  }
+  return { positions, normals, colors, indices };
+}
+
+/**
  * Separa a casca em dois grupos de material (coroa = 0, raiz = 1) cortando os
  * triângulos exatamente na curva cervical (crownValue = 0). Assim a coroa pode
  * se afastar da raiz (esmalte erguido) sem borda em dente de serra.
@@ -748,7 +879,7 @@ export function buildTooth(opts: BuildOptions): ToothData {
       fP,
       cs,
       (x, y, z) => -fD(x, y, z),
-    ], cs, mode === -1 ? undefined : [0, 2]);
+    ], cs, [0, 2]);
   };
 
   const coreMesh = (g: Grid, mode: 0 | 1 | -1) => {
@@ -782,7 +913,7 @@ export function buildTooth(opts: BuildOptions): ToothData {
     }, mode ? g.h * 1.3 : 0, (x, y, z) => {
       const c = cs(x, y, z);
       return Math.max(Math.min(Math.max(fD(x, y, z), c), Math.max(fP(x, y, z), -c)), -fQ(x, y, z));
-    }, mode ? s : 0, g.h, true, [fD, fP, cs, (x, y, z) => -cs(x, y, z)], cs, mode === -1 ? undefined : [1]);
+    }, mode ? s : 0, g.h, true, [fD, fP, cs, (x, y, z) => -cs(x, y, z)], cs, [1]);
   };
 
   const pulpMesh = (g: Grid, mode: 0 | 1 | -1) => {
@@ -795,7 +926,7 @@ export function buildTooth(opts: BuildOptions): ToothData {
         if (k === 101) return 2;
       }
       return 0;
-    }, mode ? g.h * 1.3 : 0, fQ, mode ? s : 0, g.h);
+    }, mode ? g.h * 1.3 : 0, fQ, mode ? s : 0, g.h, true, undefined, undefined, []);
   };
 
   const shell = splitGroups(
@@ -803,16 +934,56 @@ export function buildTooth(opts: BuildOptions): ToothData {
     (x, y) => cs(x, y, 0),
   );
 
-  const whole = { shell, enamel: enamelMesh(enamelG, 0), core: coreMesh(coreG, 0) };
+  // faces de corte exatas: plano z = 0 (x ≥ 0) e plano x = 0 (z ≥ 0); o quadrante
+  // removido usa as mesmas regiões com a normal invertida
+  const sc = h * 0.5;
+  const caps = (f: Fn, color: (x: number, y: number) => Vec3, sgn: 1 | -1, box: [number, number]) =>
+    merge(
+      capMesh((a, b) => f(a, b, 0), (a, b) => [a, b, 0], [0, 0, sgn], color, [0, 0.38, box[0], box[1]], sc),
+      capMesh((a, b) => f(0, b, a), (a, b) => [0, b, a], [sgn, 0, 0], color, [0, 0.32, box[0], box[1]], sc),
+    );
+  const capSet = (sgn: 1 | -1) => ({
+    enamel: caps(fEnamel, enamelFace, sgn, [-0.02, 0.57]),
+    core: caps(fCore, faceColor, sgn, [-0.6, 0.5]),
+    pulp: caps(fQ, pulpFace, sgn, [-0.44, 0.33]),
+  });
+  const capMain = capSet(1);
+  const capQuarter = capSet(-1);
+  // anel cervical (degrau entre dentina e superfície, à vista quando o esmalte
+  // sobe): a superfície cs = 0 é y = yc(x), qualquer z → também uma "face" 2D
+  const yc = (x: number) => toWorldY(cervicalV(toSvgU(x)));
+  const ycN = (x: number, sgn: 1 | -1): Vec3 => {
+    const e = 1e-4;
+    const d = (yc(x + e) - yc(x - e)) / (2 * e);
+    const l = Math.hypot(d, 1);
+    return [(-d / l) * sgn, (1 / l) * sgn, 0];
+  };
+  const ring = (sgn: 1 | -1, color: (x: number, y: number) => Vec3) =>
+    capMesh(
+      (a, b) => {
+        const y = yc(a);
+        return Math.max(fP(a, y, b), -fD(a, y, b));
+      },
+      (a, b) => [a, yc(a), b],
+      (x) => ycN(x, sgn),
+      color,
+      [-0.38, 0.38, -0.32, 0.32],
+      sc,
+    );
+  const ringCore = ring(1, coreOuterColor); // topo da raiz, voltado para cima
+  const ringEnamel = ring(-1, enamelFace); // base do esmalte, voltada para baixo
+
+  // o anel inteiro entra em todas as peças: o recorte na GPU deixa só a parte de cada uma
+  const whole = { shell, enamel: merge(enamelMesh(enamelG, 0), ringEnamel), core: merge(coreMesh(coreG, 0), ringCore) };
   const cut = {
-    enamel: enamelMesh(cutMain(enamelG), 1),
-    core: coreMesh(cutMain(coreG), 1),
-    pulp: pulpMesh(cutMain(pulpG), 1),
+    enamel: merge(enamelMesh(cutMain(enamelG), 1), capMain.enamel, ringEnamel),
+    core: merge(coreMesh(cutMain(coreG), 1), capMain.core, ringCore),
+    pulp: merge(pulpMesh(cutMain(pulpG), 1), capMain.pulp),
   };
   const quarter = {
-    enamel: enamelMesh(cutQuarter(enamelG), -1),
-    core: coreMesh(cutQuarter(coreG), -1),
-    pulp: pulpMesh(cutQuarter(pulpG), -1),
+    enamel: merge(enamelMesh(cutQuarter(enamelG), -1), capQuarter.enamel, ringEnamel),
+    core: merge(coreMesh(cutQuarter(coreG), -1), capQuarter.core, ringCore),
+    pulp: merge(pulpMesh(cutQuarter(pulpG), -1), capQuarter.pulp),
   };
 
   const crowns = buildCrowns(Math.max(0.03, h * 3.2));
