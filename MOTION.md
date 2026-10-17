@@ -31,8 +31,8 @@ Sem `tratamentos`, o hero vai direto à arcada; sem `especialidades`, a sequênc
 | Faixa | Câmera / objeto | Interface |
 |---|---|---|
 | 0–0,15 (A) | dente gira −20° → 0° | arco vira tela cheia (0,06–0,22) |
-| 0,15–0,55 (B) | órbita 0° → 35°, desce até −5°, distância 0,95; corte abre (0,17–0,41); esmalte sobe 0 → 0,105 (≈ 55 px); polpa brilha | título A sai; texto B entra (0,25); legendas uma a uma (0,32–0,52), presas ao modelo por projeção |
-| 0,55–1 (C) | enquadramento vai ao terço esquerdo; esmalte → 0,25 (≈ 130 px) e −8°; órbita 26°, elevação 3°; giro lento (ocioso) | legendas e texto B saem (0,60); lista entra da direita em sequência (0,68–0,86); CTA (0,88) |
+| 0,15–0,60 (B) | órbita 0° → 35°, desce até −5°, distância 0,95; corte abre (0,17–0,41); esmalte sobe 0 → 0,105 (≈ 55 px); polpa brilha | título A sai (0,13–0,19, antes de o dente crescer); texto B entra (0,25); legendas uma a uma (0,32–0,52), presas ao modelo por projeção; texto e legendas saem (0,57) |
+| 0,60–1 (C) | só depois que o texto B saiu: enquadramento vai ao terço esquerdo (0,62–0,80); esmalte → 0,25 (≈ 130 px) e −8°; órbita 26°, elevação 3°; giro lento (ocioso) | lista entra da direita em sequência (0,73–0,89); CTA (0,90) |
 
 **Especialidades**
 | Faixa | O que acontece |
@@ -56,9 +56,17 @@ A timeline é **a mesma** do desktop. `html.cine-compact` muda só:
 |---|---|---|
 | Rolagem por cena (`--cine-unit`) | 100vh | 72vh (trechos fixados mais curtos) |
 | Composição | âncoras e textos do artboard Main | hero do MobileHero; quadro A centrado no arco; B com o dente à esquerda e legendas à direita; C com o dente no canto superior direito e a lista (até 6 itens) abaixo; arcada sob o título, especialidades em 2 colunas |
-| Qualidade 3D | DPR ≤ 1,75, MSAA, geometria refinada | DPR ≤ 1,5, sem MSAA, geometria leve |
+| Qualidade 3D | DPR até 2, MSAA 4×, geometria 0,016 → 0,0095 | DPR até 2, MSAA 4×, geometria 0,016 → 0,011 |
 | Giro ocioso | 60 quadros/s | ~30 quadros/s |
-| Legendas do quadro B | saem em 60% | saem em 52% (antes de o dente atravessar a tela) |
+| Legendas do quadro B | nome + descrição | só o nome abaixo de 600 px (polpa e dentina ficam muito próximas) |
+
+**Nitidez.** O canvas é desenhado em até 2× a tela (telas 3× também ficam em 2×: diferença
+imperceptível, 2,25× menos pixels) com antisserrilhado 4×, e sempre no tamanho real em que
+aparece (redimensionar, girar, zoom do navegador ou trocar de monitor refazem o canvas — nunca
+é esticado por CSS). Um governador de resolução reduz 0,25× por vez (até 1,25× no celular e 1×
+no desktop) quando os quadros desenhados em sequência passam de ~28 ms. A geometria fina é
+gerada no worker; as faces de corte têm o contorno projetado sobre a superfície exata
+(`projectCutOutline`/`projectCutSurface` em `tooth-builder.ts`), sem degraus da grade.
 
 A altura do palco usa `vh` (viewport grande no iOS/Android): a barra de endereço aparecendo ou
 sumindo não refaz a trilha. O conteúdo do fundo respeita a faixa coberta pelas barras do

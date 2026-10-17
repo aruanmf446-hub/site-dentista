@@ -3,6 +3,59 @@
 Execução registrada em 16/10/2026, nesta branch, no ambiente de nuvem do Claude Code
 (Linux, Chromium 141 do Playwright 1.64, **WebGL por software — SwiftShader**, sem GPU).
 
+## Refino visual — sobreposições e nitidez (17/10/2026)
+Investigado no build idêntico ao publicado (`3d326ea`) e no corrigido, em 390 × 844, 768 × 1024,
+1024 × 768, 1280 × 800 e 1440 × 900.
+
+**Sobreposições** — `scripts/qa/overlap-audit.mjs` projeta o que está visível do dente (ou de
+cada dente da arcada) na tela e cruza com as linhas reais de texto visíveis, além de procurar
+textos sobrepostos, texto sob o cabeçalho e invasão da margem lateral.
+
+| Causa | Onde | Correção |
+|---|---|---|
+| Título do quadro A largo demais (42vw): a 2ª linha passava sob o dente centrado | 1280, 1440 | largura máx. 33vw / 500 px |
+| Texto do B ainda visível enquanto o dente atravessava a tela rumo ao C | todas as larguras de desktop | texto/legendas do B saem em 57%; o dente só se desloca a partir de 62%; o C entra em 71% |
+| Título A saindo tarde enquanto o dente crescia na órbita do B | 1024–1440 | saída em 13–19% |
+| Dente do B sobre o título do B | 1024 | âncora 43% / texto até 30vw (900–1239 px) |
+| Legendas "Polpa" e "Dentina" muito próximas: descrição de uma sobre o nome da outra | 390 | abaixo de 600 px só o nome (ligado ao modelo) |
+| Aviso "Destaques ilustrativos" sobre as especialidades 5 e 6 | 390 | área segura inferior maior |
+| WhatsApp flutuante sobre o arco e os campos do agendamento | desktop | sai de cena enquanto o formulário (que já tem botão de WhatsApp) está na tela |
+
+Resultado: **26 achados → 0** (5 larguras × 28 pontos da timeline). As seções depois da
+sequência (Clínica, Equipe, Unidades, Galeria, Convênios, Valores, Depoimentos, Dúvidas,
+Agendamento, rodapé, cabeçalho e barras) foram percorridas tela a tela nas 5 larguras, sem
+conflitos.
+
+**Nitidez** — medido no navegador (tamanho na tela × resolução real do canvas):
+
+| Aparelho | Antes | Depois |
+|---|---|---|
+| iPhone 390 (DPR 3) | 585 × 1266 (1,5×, **metade da resolução**), sem antisserrilhado | 780 × 1688 (2×), MSAA 4× |
+| iPad 768 (DPR 2) | 1,5×, sem antisserrilhado | 2×, MSAA 4× |
+| Notebook Retina 1440 (DPR 2) | 2520 × 1575 (1,75×, esticado 14% por CSS) | 2880 × 1800 (2×), MSAA 4× |
+
+Outras causas: a geometria do celular era a mais grossa (célula 0,017, sem refino, porque o
+iPhone informa 4 núcleos e caía em "fraco") → agora 0,016 → 0,011 no worker; as bordas das faces
+de corte saíam em degraus da grade → o contorno é projetado na superfície exata
+(`tooth-builder.ts`); `will-change: transform` permanente nos textos da cena (texto suave no
+Safari) → removido. Imagens: cada foto recebe ≥ 1,1× os pixels necessários em DPR 2 e 3, exceto
+o arco grande de "A clínica" no desktop (0,96 por causa do recorte) → `sizes` corrigido.
+Antes × depois: `docs/qa/nitidez-iphone-antes-depois.jpg`, `docs/qa/nitidez-retina-antes-depois.jpg`.
+
+Custo: triângulos no quadro B do iPhone 36,7 mil → 88,9 mil; geração da malha +15% (no worker,
+fora da thread principal). Um governador baixa a resolução em degraus de 0,25× se os quadros
+passarem de ~28 ms durante a rolagem.
+
+**Testes:** `astro check` 0 erros; suíte completa **78 de 78** (16,9 min). Novos em
+`tests/e2e/visual-refino.spec.ts`: sem sobreposição em 21 pontos da sequência a 1440, 1024 e
+390; canvas = tamanho na tela × DPR (alvo 2×) com MSAA, também depois de girar (Retina e iPhone);
+fotos com ≥ 95% dos pixels necessários (390 DPR 3 e 1440 DPR 2); WhatsApp flutuante fora do
+formulário. Sequências atualizadas: `docs/qa/*-sequencia.jpg`.
+
+**Limitações:** validado em Chromium com GPU emulada por software; Safari/iPhone real ainda não
+(WebKit e o domínio da produção são bloqueados pela rede deste ambiente). Restam franjas finas
+na aresta do esmalte cortado e na linha cervical quando o dente está muito ampliado.
+
 ## Correção do scroll 3D (16/10/2026)
 Reproduzido no build idêntico ao publicado (mesmos arquivos com hash servidos pela Vercel no
 deploy `dpl_ADgMC8AxAfCwPs4J7ZNJen7McgNP`, commit `60c1ca9`) com `scripts/qa/probe-scroll.mjs`.
