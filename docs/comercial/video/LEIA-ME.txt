@@ -1,0 +1,13 @@
+CRM PLUS STORE — Seu site. Sua marca.
+Vídeo vertical 1080 × 1920, 30 fps, duração de 10 segundos.
+
+Esta versão contém trilha instrumental original e textos publicitários.
+NÃO contém narração: o proxy do ambiente bloqueou o serviço de síntese de voz.
+O texto de locução solicitado está em narracao.srt, para gravação ou inclusão posterior.
+A liberação do domínio speech.platform.bing.com foi salva como rascunho nas configurações do ambiente; ainda não foi aplicada/publicada.
+
+A interface é uma captura do template real do repositório, com sua própria cena Three.js em movimento. Não foram geradas interfaces substitutas. A composição publicitária e o enquadramento vertical ficam fora da interface capturada.
+Trilha instrumental criada por síntese local para esta peça, sem amostras de músicas de terceiros.
+
+Locução solicitada:
+Seu site. Sua marca. Personalize sua presença digital e conecte sua clínica aos pacientes. CRM Plus Store.
