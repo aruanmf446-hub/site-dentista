@@ -122,6 +122,30 @@ export function sampleField(f: Field2D, u: number, v: number): number {
   return (a * (1 - tx) + b * tx) * (1 - ty) + (c * (1 - tx) + e * tx) * ty;
 }
 
+/**
+ * Mesma distância com interpolação bicúbica (Catmull-Rom): o gradiente fica
+ * contínuo entre as células da grade. Usada nas normais — com a bilinear,
+ * a normal "salta" a cada célula e o brilho rasante vira um pontilhado.
+ */
+export function sampleFieldSmooth(f: Field2D, u: number, v: number): number {
+  const fx = (u - f.u0) / f.step;
+  const fy = (v - f.v0) / f.step;
+  if (fx < 1 || fy < 1 || fx >= f.nu - 2 || fy >= f.nv - 2) return sampleField(f, u, v);
+  const i = fx | 0,
+    j = fy | 0;
+  const tx = fx - i,
+    ty = fy - j;
+  const d = f.data;
+  const nu = f.nu;
+  const cr = (p0: number, p1: number, p2: number, p3: number, t: number) =>
+    p1 + 0.5 * t * (p2 - p0 + t * (2 * p0 - 5 * p1 + 4 * p2 - p3 + t * (3 * (p1 - p2) + p3 - p0)));
+  const row = (jj: number) => {
+    const o = jj * nu + i;
+    return cr(d[o - 1]!, d[o]!, d[o + 1]!, d[o + 2]!, tx);
+  };
+  return cr(row(j - 1), row(j), row(j + 1), row(j + 2), ty);
+}
+
 /** Posição relativa (−1..1) de u dentro do intervalo da linha mais próxima. */
 export function localSpan(f: Field2D, u: number, v: number): number {
   let j = Math.round((v - f.v0) / f.step);

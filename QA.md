@@ -3,6 +3,31 @@
 Execução registrada em 16/10/2026, nesta branch, no ambiente de nuvem do Claude Code
 (Linux, Chromium 141 do Playwright 1.64, **WebGL por software — SwiftShader**, sem GPU).
 
+## Rodada 4 — arcada sobre o hero e pontilhado na silhueta (17/10/2026)
+
+**Arcada sobre o hero.** Não era o 3D: era a arcada em CSS das especialidades (desenho de
+reserva, com aros e fio do aparelho). No modo cinema ela só era escondida depois que o 3D
+ficava pronto; no intervalo entre a timeline montar e o 3D terminar (alguns segundos em
+máquinas mais lentas) ela aparecia sobre o hero. Reproduzido em 1904 × 881 segurando o worker
+da geometria (`docs/qa/rodada4-hero-antes.jpg`). Agora o desenho de reserva de cada cena só
+aparece com a própria cena. Teste novo em `visual-refino.spec.ts` (falha sem a correção).
+
+**Pontilhado na silhueta / perda de qualidade ao rolar.** Causa medida na malha: a projeção
+dos vértices na superfície seguia o gradiente do campo, e fora do sólido o campo é
+`max(d, |z|)` — o gradiente afunila os vértices para a borda lateral (z = 0), que é
+justamente a silhueta vista de frente. Resultado: **541 triângulos dobrados** na casca, todos
+na borda. Agora cada vértice anda pela normal da própria malha até a superfície (raiz na
+reta, sem escorregar), e triângulos que ainda virassem voltam à posição da grade:
+**0 dobrados** (teste novo `tests/unit/geometry.spec.ts`). Normais calculadas com
+interpolação bicúbica do campo 2D (gradiente contínuo entre as células).
+Antes × depois: `docs/qa/rodada4-silhueta-antes-depois.jpg`.
+
+**Dente cortado (quadro B).** Menos franjas nas faces de corte (mesma projeção) e o esmalte
+junto ao colo passou de ~1 célula para ~2,5 células de espessura: os "dentes de serra"
+brancos na linha cervical, visíveis quando o esmalte sobe, sumiram
+(`docs/qa/rodada4-corte-antes-depois.jpg`, `docs/qa/rodada4-colo-antes-depois.jpg`).
+Tempo de geração da malha: igual ao anterior.
+
 ## Rodada 3 — tela baixa, qualidade do 3D e velocidade da rolagem (17/10/2026)
 Reproduzido no tamanho relatado: Windows com zoom de 150% → viewport **1260 × 587**, DPR 1,5.
 

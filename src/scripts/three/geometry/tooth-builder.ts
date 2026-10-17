@@ -18,7 +18,7 @@
  *
  * Arquivo puro (sem Three.js): roda dentro de um Web Worker.
  */
-import { buildField, sampleField, type Field2D } from './field2d';
+import { buildField, sampleField, sampleFieldSmooth, type Field2D } from './field2d';
 import { surfaceNets, makeGrid, fillGrid, mapGrid, type Grid, type RawMesh } from './surface-nets';
 import { PATHS, K, pathToPolyline, toSvgU, toSvgV, toWorldX, toWorldY } from './svg-paths';
 
@@ -117,10 +117,13 @@ interface Profile {
   R2: (v: number) => number;
 }
 
+/** amostragem bicúbica (gradiente contínuo) ligada só durante o cálculo das normais */
+let smoothSampling = false;
+
 function inflate(f: Field2D, p: Profile, x: number, y: number, z: number): number {
   const u = toSvgU(x);
   const v = toSvgV(y);
-  const d2 = sampleField(f, u, v) * K;
+  const d2 = (smoothSampling ? sampleFieldSmooth(f, u, v) : sampleField(f, u, v)) * K;
   const az = Math.abs(z);
   if (d2 >= 0) return Math.max(d2, az);
   // perfil = borda arredondada + abaulamento largo, ambos a partir da
@@ -200,7 +203,8 @@ function finalize(
   const planar = new Uint8Array(n);
   const P = raw.positions;
   const h = 0.004;
-  if (snap === 0 && solid && cell > 0) projectCutSurface(P, solid, cell, 0, terms, creaseGate);
+  let P0: Float32Array | null = solid && snap === 0 ? P.slice() : null;
+  if (snap === 0 && solid && cell > 0) projectCutSurface(P, solid, cell, 0, terms, creaseGate, meshNormals(P, raw.indices));
   if (snap > 0) {
     for (let i = 0; i < n; i++) {
       const x = P[3 * i]!,
@@ -209,12 +213,15 @@ function finalize(
       if (Math.abs(z) < snap && x > snap * 0.5) P[3 * i + 2] = 0;
     }
     if (solid) {
+      P0 = P.slice(); // já presos aos planos do corte
       // o quadrante só aparece por um instante (some enquanto o corte abre): só o contorno
-      if (piece !== -1) projectCutSurface(P, solid, snap, piece || 1, terms, creaseGate);
+      if (piece !== -1) projectCutSurface(P, solid, snap, piece || 1, terms, creaseGate, meshNormals(P, raw.indices));
       projectCutOutline(P, raw.indices, solid, snap);
     }
   }
+  if (P0) unfold(P, P0, raw.indices);
   const cls = drop ? new Int8Array(n) : null;
+  smoothSampling = true;
   for (let i = 0; i < n; i++) {
     let x = P[3 * i]!,
       y = P[3 * i + 1]!,
@@ -249,6 +256,7 @@ function finalize(
     colors[3 * i + 2] = c[2];
     if (s.plane) planar[i] = 1;
   }
+  smoothSampling = false;
   let indices = raw.indices;
   if (cls && drop) {
     const fora = new Set(drop);
@@ -314,19 +322,129 @@ function finalize(
  * até solid = 0 em 3D e, se cruzarem o plano, ficam presos nele — a aresta
  * volta a ser viva e lisa.
  */
+/**
+ * A projeção pode dobrar triângulos onde a superfície faz curva fechada (a
+ * borda lateral do dente, em z = 0, que é a silhueta vista de frente): o
+ * triângulo invertido vira um "pontilhado" no contorno. Triângulo que virou
+ * em relação à malha da grade devolve seus vértices à posição original.
+ */
+function unfold(P: Float32Array, P0: Float32Array, I: Uint32Array): void {
+  const face = (Q: Float32Array, a: number, b: number, c: number) => {
+    const ux = Q[3 * b]! - Q[3 * a]!,
+      uy = Q[3 * b + 1]! - Q[3 * a + 1]!,
+      uz = Q[3 * b + 2]! - Q[3 * a + 2]!;
+    const vx = Q[3 * c]! - Q[3 * a]!,
+      vy = Q[3 * c + 1]! - Q[3 * a + 1]!,
+      vz = Q[3 * c + 2]! - Q[3 * a + 2]!;
+    return [uy * vz - uz * vy, uz * vx - ux * vz, ux * vy - uy * vx] as const;
+  };
+  for (let pass = 0; pass < 6; pass++) {
+    let fixed = 0;
+    for (let t = 0; t < I.length; t += 3) {
+      const a = I[t]!,
+        b = I[t + 1]!,
+        c = I[t + 2]!;
+      const n1 = face(P, a, b, c);
+      const n0 = face(P0, a, b, c);
+      const d = n1[0] * n0[0] + n1[1] * n0[1] + n1[2] * n0[2];
+      if (d >= 0) continue; // degenerado (área ~0) não aparece: só os invertidos voltam
+      for (const k of [a, b, c]) {
+        if (P[3 * k] === P0[3 * k] && P[3 * k + 1] === P0[3 * k + 1] && P[3 * k + 2] === P0[3 * k + 2]) continue;
+        P[3 * k] = P0[3 * k]!;
+        P[3 * k + 1] = P0[3 * k + 1]!;
+        P[3 * k + 2] = P0[3 * k + 2]!;
+        fixed++;
+      }
+    }
+    if (!fixed) break;
+  }
+}
+
 /** Um passo de Newton de (x, y, z) rumo a fn = 0; devolve também a distância estimada. */
 function newton(fn: Fn, x: number, y: number, z: number, e: number): [number, number, number, number] {
   // diferenças progressivas: 4 avaliações em vez de 7 (a função custa caro)
   const f = fn(x, y, z);
   const gx = (fn(x + e, y, z) - f) / e;
   const gy = (fn(x, y + e, z) - f) / e;
-  const gz = (fn(x, y, z + e) - f) / e;
+  // em z o passo vai para longe do plano médio: o perfil usa |z| e um passo que
+  // cruza z = 0 inclina o gradiente, dobrando a malha na borda (silhueta pontilhada)
+  const ez = z < 0 ? -e : e;
+  const gz = (fn(x, y, z + ez) - f) / ez;
   const g2 = gx * gx + gy * gy + gz * gz;
   if (g2 < 1e-10) return [x, y, z, Infinity];
   return [x - (f * gx) / g2, y - (f * gy) / g2, z - (f * gz) / g2, Math.abs(f) / Math.sqrt(g2)];
 }
 
-function projectCutSurface(P: Float32Array, solid: Fn, cell: number, piece: 1 | -1 | 0, terms?: Fn[], creaseGate?: Fn): void {
+/** Normais da malha da grade (média das faces, ponderada pela área). */
+function meshNormals(P: Float32Array, I: Uint32Array): Float32Array {
+  const N = new Float32Array(P.length);
+  for (let t = 0; t < I.length; t += 3) {
+    const a = I[t]!,
+      b = I[t + 1]!,
+      c = I[t + 2]!;
+    const ux = P[3 * b]! - P[3 * a]!,
+      uy = P[3 * b + 1]! - P[3 * a + 1]!,
+      uz = P[3 * b + 2]! - P[3 * a + 2]!;
+    const vx = P[3 * c]! - P[3 * a]!,
+      vy = P[3 * c + 1]! - P[3 * a + 1]!,
+      vz = P[3 * c + 2]! - P[3 * a + 2]!;
+    const fx = uy * vz - uz * vy,
+      fy = uz * vx - ux * vz,
+      fz = ux * vy - uy * vx;
+    for (const k of [a, b, c]) {
+      N[3 * k] += fx;
+      N[3 * k + 1] += fy;
+      N[3 * k + 2] += fz;
+    }
+  }
+  for (let i = 0; i < N.length; i += 3) {
+    const l = Math.hypot(N[i]!, N[i + 1]!, N[i + 2]!) || 1;
+    N[i] /= l;
+    N[i + 1] /= l;
+    N[i + 2] /= l;
+  }
+  return N;
+}
+
+/**
+ * Raiz de fn sobre a reta p + t·d, |t| ≤ lim (regula falsi). Andar pela normal
+ * da malha, e não pelo gradiente, evita que os vértices escorreguem pela
+ * superfície: fora do sólido o campo é max(d, |z|) e o gradiente afunila tudo
+ * para a borda lateral (z = 0), dobrando triângulos na silhueta.
+ */
+function lineRoot(fn: Fn, x: number, y: number, z: number, dx: number, dy: number, dz: number, lim: number, tol: number): number | null {
+  let fa = fn(x, y, z);
+  if (Math.abs(fa) < tol * 0.1) return 0;
+  let a = 0;
+  let b = fa > 0 ? -lim : lim;
+  let fb = fn(x + b * dx, y + b * dy, z + b * dz);
+  if (fa * fb > 0) {
+    // a normal da grade pode apontar um pouco errado: tenta metade do caminho no outro sentido
+    b = -b * 0.5;
+    fb = fn(x + b * dx, y + b * dy, z + b * dz);
+    if (fa * fb > 0) return null;
+  }
+  let side = 0;
+  for (let k = 0; k < 14; k++) {
+    const t = (a * fb - b * fa) / (fb - fa);
+    const ft = fn(x + t * dx, y + t * dy, z + t * dz);
+    if (Math.abs(ft) < tol * 0.1 || Math.abs(b - a) < tol * 0.1) return t;
+    if (ft * fb > 0) {
+      b = t;
+      fb = ft;
+      if (side === -1) fa *= 0.5;
+      side = -1;
+    } else {
+      a = t;
+      fa = ft;
+      if (side === 1) fb *= 0.5;
+      side = 1;
+    }
+  }
+  return (a * fb - b * fa) / (fb - fa);
+}
+
+function projectCutSurface(P: Float32Array, solid: Fn, cell: number, piece: 1 | -1 | 0, terms?: Fn[], creaseGate?: Fn, dirs?: Float32Array): void {
   const n = P.length / 3;
   // derivada com passo curto: o perfil é muito inclinado junto ao contorno (silhueta)
   const e = cell * 0.08;
@@ -342,11 +460,18 @@ function projectCutSurface(P: Float32Array, solid: Fn, cell: number, piece: 1 | 
     let x = x0,
       y = y0,
       z = z0;
-    for (let k = 0; k < 4; k++) {
-      const r = newton(solid, x, y, z, e);
-      if (r[3] === Infinity) break;
-      [x, y, z] = r;
-      if (r[3] < tol) break;
+    const t = dirs ? lineRoot(solid, x0, y0, z0, dirs[3 * i]!, dirs[3 * i + 1]!, dirs[3 * i + 2]!, maxMove * 0.98, tol) : null;
+    if (t !== null) {
+      x = x0 + t * dirs![3 * i]!;
+      y = y0 + t * dirs![3 * i + 1]!;
+      z = z0 + t * dirs![3 * i + 2]!;
+    } else {
+      for (let k = 0; k < 4; k++) {
+        const r = newton(solid, x, y, z, e);
+        if (r[3] === Infinity) break;
+        [x, y, z] = r;
+        if (r[3] < tol) break;
+      }
     }
     // vinco entre duas superfícies (ex.: esmalte × linha cervical): projeções
     // alternadas levam o vértice à linha de interseção — sem dente de serra
@@ -524,7 +649,7 @@ export function buildTooth(opts: BuildOptions): ToothData {
     const cv = cervicalV(toSvgU(x));
     const t = smooth(cv - 55, cv - 4, v);
     const d = fDraw(x, y, z);
-    return t <= 0 ? d : lerp(d, fP(x, y, z) + 0.012, t);
+    return t <= 0 ? d : lerp(d, fP(x, y, z) + 0.026, t);
   };
   const fQ: Fn = (x, y, z) => inflate(F.Q, pulpProfile, x, y, z);
   /** < 0 na coroa (acima da linha cervical) */

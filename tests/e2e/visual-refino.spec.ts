@@ -137,6 +137,25 @@ test.describe('fotos na resolução da tela', () => {
   }
 });
 
+test.describe('antes do 3D ficar pronto', () => {
+  test.use({ viewport: { width: 1904, height: 881 } });
+  test('a arcada em CSS das especialidades não aparece sobre o hero', async ({ page }) => {
+    // segura o worker da geometria: a página fica no intervalo entre a timeline e o 3D
+    await page.route(/worker/i, (r) => (r.request().resourceType() === 'script' ? new Promise(() => {}) : r.continue()));
+    await page.goto(url('alva-demo', '/'));
+    await page.waitForFunction(() => document.documentElement.classList.contains('cinema-ready'));
+    await page.waitForTimeout(1500);
+    const estado = await page.evaluate(() => ({
+      pronto: document.documentElement.classList.contains('stage-ready'),
+      arcada: getComputedStyle(document.querySelector('.esp [data-arcade-css]')!).visibility,
+      denteHero: getComputedStyle(document.querySelector('.hero__tooth-svg')!).visibility,
+    }));
+    expect(estado.pronto).toBe(false);
+    expect(estado.arcada).toBe('hidden');
+    expect(estado.denteHero).toBe('visible');
+  });
+});
+
 test('desktop: o WhatsApp flutuante sai de cena sobre o formulário de agendamento', async ({ page }) => {
   await page.goto(url('alva-demo', '/'));
   const flutuante = page.locator('[data-wa-float]');

@@ -222,6 +222,11 @@ const total = segments.reduce((acc, s) => acc + s.len, 0);
   html.is-cinema.stage-ready .esp .view-fallback {
     visibility: hidden;
   }
+  /* antes do 3D ficar pronto, o desenho de reserva de uma cena só aparece com
+     ela (a arcada em CSS das especialidades não pode surgir sobre o hero) */
+  html.is-cinema.cinema-ready .panel:not(.is-active) .view-fallback {
+    visibility: hidden;
+  }
   html.is-cinema .panel .view-canvas {
     display: none;
   }
