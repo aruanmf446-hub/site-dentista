@@ -59,9 +59,14 @@ export async function initCinema(): Promise<void> {
   const heroVisual = root.dataset.heroVisual === 'foto' ? 'foto' : '3d';
   const html = document.documentElement;
   const isCompact = () => html.classList.contains('cine-compact');
-  // qualidade decidida na abertura (celular: menos pixels e sem MSAA)
   const compactAtStart = isCompact();
-  const maxDpr = compactAtStart ? 1.5 : 1.75;
+  // Resolução do canvas: até 2× a tela em qualquer aparelho, com antisserrilhado.
+  // (Telas 3× ficam em 2×: diferença imperceptível e 2,25× menos pixels.)
+  // Se o aparelho não sustentar a rolagem, o governador abaixo reduz em degraus.
+  const maxDpr = 2;
+  let cap = maxDpr; // teto atual (o governador baixa)
+  let ratio = dpr(maxDpr);
+  const minRatio = Math.min(ratio, compactAtStart ? 1.25 : 1);
 
   /* ---------- posição da rolagem ao atualizar/voltar ---------- */
   // O ScrollTrigger mede a página rolando até o topo na primeira atualização, o
@@ -121,7 +126,8 @@ export async function initCinema(): Promise<void> {
     W = viewport.clientWidth;
     H = viewport.clientHeight;
     vpRect = viewport.getBoundingClientRect();
-    stage?.setSize(W, H, dpr(maxDpr));
+    ratio = Math.max(Math.min(minRatio, dpr(maxDpr)), Math.min(dpr(maxDpr), cap)); // zoom/monitor mudam o DPR
+    stage?.setSize(W, H, ratio);
     const ha = rel(root.querySelector('[data-hero-arch]'));
     if (ha) heroArch = ha;
     for (const name of [...toothAnchorNames, 'arcada']) {
@@ -283,7 +289,7 @@ export async function initCinema(): Promise<void> {
     // Quadro A (0–15%): dente gira −20° → 0°
     S({ toothRotY: 0, toothRotZ: -2, idle: 0 }, T(0), D(0.15));
     Cn({ arch: 2 }, T(0.06), D(0.16), 'power2.inOut');
-    exit(a, T(0.15), D(0.08), { y: -40 });
+    exit(a, T(0.13), D(0.06), { y: -40 }); // sai antes de o dente crescer na órbita do quadro B
     exit(hint, T(0.1), D(0.06), { x: 12 });
     // Quadro B (15–55%): órbita 35°, desce, aproxima; corte; esmalte sobe; polpa brilha
     Cn({ anchor: 2 }, T(0.15), D(0.25));
@@ -293,19 +299,20 @@ export async function initCinema(): Promise<void> {
     S({ pulpGlow: 1 }, T(0.3), D(0.24));
     enter(bText, T(0.25), D(0.09), { opacity: 0, y: 26 });
     enter(labels, T(0.32), D(0.07), { opacity: 0, x: 16 }, D(0.045));
-    // no celular as legendas saem antes de o dente atravessar a tela rumo ao quadro C
-    const bOut = compactAtStart ? 0.52 : 0.6;
+    // texto e legendas do B saem antes de o dente atravessar a tela rumo ao quadro C
+    const bOut = 0.57;
     exit(labels, T(bOut), D(0.05), { x: 10 }, D(0.012));
     exit(bText, T(bOut), D(0.07), { y: -32 });
     // Quadro C (55–100%): câmera recua, dente vai ao terço esquerdo, esmalte se afasta
-    Cn({ anchor: 3 }, T(0.55), D(0.2));
-    S({ enamelLift: 0.25, enamelTilt: -8 }, T(0.55), D(0.22), 'power2.inOut');
-    S({ orbit: 26, elevation: 3, distance: 1 }, T(0.55), D(0.25));
-    S({ idle: 0.55 }, T(0.72), D(0.08));
-    enter(cHead, T(0.66), D(0.07), { opacity: 0, y: 24 });
-    enter(listEl, T(0.67), D(0.03), { opacity: 0 });
-    enter(items, T(0.68), D(0.06), { opacity: 0, x: 56 }, Math.min(D(0.02), D(0.18) / Math.max(1, items.length)));
-    enter(cta, T(0.88), D(0.05), { opacity: 0, y: 16 });
+    // o dente só atravessa a tela depois que o texto e as legendas do B saíram
+    Cn({ anchor: 3 }, T(0.62), D(0.18));
+    S({ enamelLift: 0.25, enamelTilt: -8 }, T(0.6), D(0.2), 'power2.inOut');
+    S({ orbit: 26, elevation: 3, distance: 1 }, T(0.6), D(0.22));
+    S({ idle: 0.55 }, T(0.78), D(0.08));
+    enter(cHead, T(0.71), D(0.07), { opacity: 0, y: 24 });
+    enter(listEl, T(0.72), D(0.03), { opacity: 0 });
+    enter(items, T(0.73), D(0.06), { opacity: 0, x: 56 }, Math.min(D(0.02), D(0.16) / Math.max(1, items.length)));
+    enter(cta, T(0.9), D(0.05), { opacity: 0, y: 16 });
   }
 
   /* ===== 02 · Especialidades: o dente vira arcada ===== */
@@ -454,6 +461,22 @@ export async function initCinema(): Promise<void> {
   let idleAcc = 0;
   const io = new IntersectionObserver(([en]) => (inView = !!en?.isIntersecting), { rootMargin: '0px' });
   io.observe(root);
+  // governador de resolução: quadros desenhados em sequência com intervalo
+  // > 28 ms (abaixo de ~36 quadros/s) por um tempo → reduz 0,25× (nunca abaixo de minRatio)
+  let lastDraw = 0;
+  let slow = 0;
+  const govern = () => {
+    const now = performance.now();
+    const gap = now - lastDraw;
+    lastDraw = now;
+    if (gap > 120) return; // não era animação contínua
+    slow = gap > 28 ? slow + 1 : Math.max(0, slow - 1);
+    if (slow > 24 && ratio > minRatio && stage) {
+      cap = Math.max(minRatio, Math.round((ratio - 0.25) * 4) / 4);
+      slow = 0;
+      measure();
+    }
+  };
   const loop = (_t: number, deltaMs: number) => {
     if (!inView) return;
     const idle = state.idle > 0.001 && live;
@@ -471,6 +494,7 @@ export async function initCinema(): Promise<void> {
     if (idle) stage.tick(dt);
     stage.apply(state, toothRect(), rects.arcada!);
     stage.render();
+    govern();
     updateLeaders();
     if (first) {
       first = false;
@@ -495,6 +519,10 @@ export async function initCinema(): Promise<void> {
       html.classList.toggle('cine-compact', w < COMPACT_BELOW);
       ScrollTrigger.refresh();
     }, 120);
+    // o canvas sempre acompanha o tamanho real (sem esticar por CSS → sem borrão)
+    requestAnimationFrame(() => {
+      if (viewport.clientWidth !== W || viewport.clientHeight !== H || Math.min(dpr(maxDpr), cap) !== ratio) measure();
+    });
   };
   window.addEventListener('resize', onResize);
   window.addEventListener('orientationchange', onResize);
@@ -509,6 +537,13 @@ export async function initCinema(): Promise<void> {
     },
     get live() {
       return live;
+    },
+    get pixelRatio() {
+      return ratio;
+    },
+    /** resolução pedida para esta tela (antes do governador) */
+    get targetRatio() {
+      return dpr(maxDpr);
     },
   };
 
@@ -554,7 +589,7 @@ export async function initCinema(): Promise<void> {
   /* ---------- 3D: depois do carregamento (o SVG do design cobre o intervalo) ---------- */
   await afterLoad();
   try {
-    stage = new Stage3D(canvas, readColors(), { antialias: !compactAtStart });
+    stage = new Stage3D(canvas, readColors(), { antialias: true });
   } catch (err) {
     teardown('sem contexto WebGL', err);
     return;
@@ -568,11 +603,11 @@ export async function initCinema(): Promise<void> {
     dirty = true;
   });
   stage.setPresets(readPresets());
-  stage.setSize(W, H, dpr(maxDpr));
+  stage.setSize(W, H, ratio);
   // se a geometria não chegar a tempo (aparelho muito lento, worker travado), desiste
   const timeout = window.setTimeout(() => teardown('tempo esgotado ao preparar o 3D'), 25_000);
   try {
-    const assets = await loadAssets(compactAtStart ? 'stacked' : 'cinema', (refined) => {
+    const assets = await loadAssets(compactAtStart ? 'compact' : 'cinema', (refined) => {
       if (tornDown || !stage) return;
       stage.setAssets(refined);
       dirty = true;

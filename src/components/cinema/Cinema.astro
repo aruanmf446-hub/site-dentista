@@ -199,9 +199,8 @@ const total = segments.reduce((acc, s) => acc + s.len, 0);
     z-index: 2;
     background: transparent;
   }
-  html.is-cinema .panel [data-cine] {
-    will-change: transform, opacity;
-  }
+  /* sem will-change permanente nos textos: camadas de GPU fixas deixam o texto
+     suave no Safari em posições fracionárias (o GSAP promove só durante o tween) */
   /* até a timeline assumir, só o hero aparece (evita painéis sobrepostos) */
   html.is-cinema:not(.cinema-ready) .panel:not(.hero) {
     visibility: hidden;

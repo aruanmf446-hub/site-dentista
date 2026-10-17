@@ -45,7 +45,13 @@ const tel = site.telefone ? `tel:${site.telefone.replace(/[^\d+]/g, '')}` : null
       color 0.35s var(--ease-out),
       border-color 0.35s,
       transform 0.35s var(--ease-out),
+      opacity 0.35s var(--ease-out),
       box-shadow 0.35s;
+  }
+  :global(.wa-float.is-away) {
+    opacity: 0;
+    transform: translateY(16px);
+    pointer-events: none;
   }
   :global(.wa-float.on-dark) {
     background: var(--c-on-primary);
