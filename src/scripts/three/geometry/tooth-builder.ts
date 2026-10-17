@@ -173,6 +173,10 @@ function finalize(
   classify: (x: number, y: number, z: number) => number,
   /** alinha ao plano de corte os vértices da borda (evita serrilhado) */
   snap = 0,
+  /** sólido completo (CSG): o contorno da face de corte é levado a solid = 0 */
+  solid?: Fn,
+  /** peça do corte: 1 = dente sem o quadrante x>0,z>0; −1 = o quadrante */
+  piece: 1 | -1 = 1,
 ): MeshData {
   const n = raw.positions.length / 3;
   const normals = new Float32Array(n * 3);
@@ -180,17 +184,23 @@ function finalize(
   const planar = new Uint8Array(n);
   const P = raw.positions;
   const h = 0.004;
+  if (snap > 0) {
+    for (let i = 0; i < n; i++) {
+      const x = P[3 * i]!,
+        z = P[3 * i + 2]!;
+      if (Math.abs(x) < snap && z > snap * 0.5) P[3 * i] = 0;
+      if (Math.abs(z) < snap && x > snap * 0.5) P[3 * i + 2] = 0;
+    }
+    if (solid) {
+      projectCutSurface(P, solid, snap, piece);
+      projectCutOutline(P, raw.indices, solid, snap);
+    }
+  }
   for (let i = 0; i < n; i++) {
     let x = P[3 * i]!,
       y = P[3 * i + 1]!,
       z = P[3 * i + 2]!;
     const s = surfaces[classify(x, y, z)] ?? surfaces[0]!;
-    if (snap > 0) {
-      if (Math.abs(x) < snap && z > snap * 0.5) x = 0;
-      if (Math.abs(z) < snap && x > snap * 0.5) z = 0;
-      P[3 * i] = x;
-      P[3 * i + 2] = z;
-    }
     let nx: number, ny: number, nz: number;
     if (s.plane) {
       if (s.plane === 'x') x = 0;
@@ -255,6 +265,103 @@ function finalize(
     normals[3 * i + 2] = z / m;
   }
   return { positions: P, normals, colors, indices: raw.indices };
+}
+
+/**
+ * Peças cortadas: na aresta viva entre o plano de corte e a superfície curva a
+ * grade "chanfra" os vértices (serrilhado). Os vértices da superfície curva vão
+ * até solid = 0 em 3D e, se cruzarem o plano, ficam presos nele — a aresta
+ * volta a ser viva e lisa.
+ */
+function projectCutSurface(P: Float32Array, solid: Fn, cell: number, piece: 1 | -1): void {
+  const n = P.length / 3;
+  const e = cell * 0.25;
+  const maxMove = cell * 0.9;
+  for (let i = 0; i < n; i++) {
+    const x0 = P[3 * i]!,
+      y0 = P[3 * i + 1]!,
+      z0 = P[3 * i + 2]!;
+    if (x0 === 0 || z0 === 0) continue; // já está num plano de corte
+    // só a faixa junto à aresta do corte precisa (o resto já está na superfície)
+    if (Math.min(Math.abs(x0), Math.abs(z0)) > cell * 2) continue;
+    let x = x0,
+      y = y0,
+      z = z0;
+    for (let k = 0; k < 2; k++) {
+      const f = solid(x, y, z);
+      const gx = (solid(x + e, y, z) - solid(x - e, y, z)) / (2 * e);
+      const gy = (solid(x, y + e, z) - solid(x, y - e, z)) / (2 * e);
+      const gz = (solid(x, y, z + e) - solid(x, y, z - e)) / (2 * e);
+      const g2 = gx * gx + gy * gy + gz * gz;
+      if (g2 < 1e-10) break;
+      x -= (f * gx) / g2;
+      y -= (f * gy) / g2;
+      z -= (f * gz) / g2;
+    }
+    if (!(Math.hypot(x - x0, y - y0, z - z0) < maxMove)) continue;
+    // mantém o vértice dentro da peça (prende ao plano que cruzou)
+    if (piece === 1) {
+      if (x > 0 && z > 0) {
+        if (x < z) x = 0;
+        else z = 0;
+      }
+    } else {
+      if (x < 0) x = 0;
+      if (z < 0) z = 0;
+    }
+    P[3 * i] = x;
+    P[3 * i + 1] = y;
+    P[3 * i + 2] = z;
+  }
+}
+
+/**
+ * Contorno das faces de corte: a malha sai de uma grade, então os vértices da
+ * borda da face plana ficam "em degraus" (serrilhado visível ao ampliar). Cada
+ * vértice no plano que toca a superfície curva é levado, dentro do próprio
+ * plano, até o contorno exato do sólido (solid = 0) por passos de Newton.
+ */
+function projectCutOutline(P: Float32Array, I: Uint32Array, solid: Fn, cell: number): void {
+  const n = P.length / 3;
+  const onX = (i: number) => P[3 * i] === 0 && P[3 * i + 2]! > cell * 0.5;
+  const onZ = (i: number) => P[3 * i + 2] === 0 && P[3 * i]! > cell * 0.5;
+  const borda = new Uint8Array(n); // 1: borda no plano x; 2: no plano z
+  for (let t = 0; t < I.length; t += 3) {
+    const tri = [I[t]!, I[t + 1]!, I[t + 2]!];
+    for (const plane of [1, 2] as const) {
+      const on = plane === 1 ? onX : onZ;
+      const dentro = tri.filter(on);
+      if (dentro.length && dentro.length < 3) for (const v of dentro) borda[v] = plane;
+    }
+  }
+  const e = cell * 0.25;
+  const maxMove = cell * 1.2;
+  for (let i = 0; i < n; i++) {
+    const plane = borda[i];
+    if (!plane) continue;
+    const x0 = P[3 * i]!,
+      y0 = P[3 * i + 1]!,
+      z0 = P[3 * i + 2]!;
+    // coordenadas no plano: (a, y) com a = z (plano x) ou a = x (plano z)
+    const F = (a: number, y: number) => (plane === 1 ? solid(0, y, a) : solid(a, y, 0));
+    let a = plane === 1 ? z0 : x0;
+    let y = y0;
+    for (let k = 0; k < 3; k++) {
+      const f = F(a, y);
+      const ga = (F(a + e, y) - F(a - e, y)) / (2 * e);
+      const gy = (F(a, y + e) - F(a, y - e)) / (2 * e);
+      const g2 = ga * ga + gy * gy;
+      if (g2 < 1e-10) break;
+      a -= (f * ga) / g2;
+      y -= (f * gy) / g2;
+    }
+    const a0 = plane === 1 ? z0 : x0;
+    const d = Math.hypot(a - a0, y - y0);
+    if (!(d < maxMove) || a <= cell * 0.5) continue; // não converge ou cruzaria a aresta do corte
+    P[3 * i + 1] = y;
+    if (plane === 1) P[3 * i + 2] = a;
+    else P[3 * i] = a;
+  }
 }
 
 /** Separa os triângulos em dois grupos de material (coroa = 0, raiz = 1). */
@@ -400,7 +507,7 @@ export function buildTooth(opts: BuildOptions): ToothData {
         if (k === 101) return 4;
       }
       return Fv === a ? 0 : Fv === c ? 1 : 2;
-    }, mode ? g.h * 0.9 : 0);
+    }, mode ? g.h * 1.3 : 0, (x, y, z) => Math.max(fP(x, y, z), cs(x, y, z), -fD(x, y, z)), s);
   };
 
   const coreMesh = (g: Grid, mode: 0 | 1 | -1) => {
@@ -431,7 +538,10 @@ export function buildTooth(opts: BuildOptions): ToothData {
       if (q >= U) return 4;
       if (A <= B) return d >= c ? 0 : 2;
       return p >= -c ? 1 : 3;
-    }, mode ? g.h * 0.9 : 0);
+    }, mode ? g.h * 1.3 : 0, (x, y, z) => {
+      const c = cs(x, y, z);
+      return Math.max(Math.min(Math.max(fD(x, y, z), c), Math.max(fP(x, y, z), -c)), -fQ(x, y, z));
+    }, s);
   };
 
   const pulpMesh = (g: Grid, mode: 0 | 1 | -1) => {
@@ -444,7 +554,7 @@ export function buildTooth(opts: BuildOptions): ToothData {
         if (k === 101) return 2;
       }
       return 0;
-    }, mode ? g.h * 0.9 : 0);
+    }, mode ? g.h * 1.3 : 0, fQ, s);
   };
 
   const shell = splitGroups(

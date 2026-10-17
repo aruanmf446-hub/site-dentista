@@ -17,17 +17,24 @@ export function readColors(): StageColors {
   };
 }
 
-/** Células da geometria: a primeira aparece rápido; a segunda refina (só em aparelhos fortes). */
-export function qualityCells(mode: 'cinema' | 'stacked'): number[] {
+/**
+ * Células da geometria (menor = malha mais fina, bordas do corte mais lisas).
+ * A primeira aparece rápido; a segunda refina no worker, fora da thread principal.
+ * Só aparelhos claramente fracos (≤ 2 núcleos ou ≤ 2 GB) ficam sem refino —
+ * o Safari do iPhone informa 4 núcleos e não informa memória.
+ */
+export function qualityCells(mode: 'cinema' | 'compact' | 'stacked'): number[] {
   const nav = navigator as Navigator & { deviceMemory?: number };
   const cores = nav.hardwareConcurrency || 4;
   const mem = nav.deviceMemory || 4;
-  const fraco = cores <= 4 || mem <= 2;
+  const fraco = cores <= 2 || mem <= 2;
+  const medio = !fraco && cores <= 4;
   if (mode === 'stacked') return fraco ? [0.017] : [0.017, 0.0125];
-  return fraco ? [0.016, 0.012] : [0.016, 0.0095];
+  if (mode === 'compact') return fraco ? [0.016] : [0.016, 0.011];
+  return fraco ? [0.016, 0.012] : medio ? [0.016, 0.0105] : [0.016, 0.0095];
 }
 
-export function loadAssets(mode: 'cinema' | 'stacked', onRefine: (a: ToothAssets) => void): Promise<ToothAssets> {
+export function loadAssets(mode: 'cinema' | 'compact' | 'stacked', onRefine: (a: ToothAssets) => void): Promise<ToothAssets> {
   const model = document.querySelector<HTMLElement>('[data-cinema]')?.dataset.model;
   const procedural = () => loadProcedural({ cells: qualityCells(mode), onRefine });
   if (model) {

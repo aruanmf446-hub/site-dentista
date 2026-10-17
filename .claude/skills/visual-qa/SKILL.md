@@ -13,6 +13,9 @@ description: Abre o site no navegador (Playwright + Chromium local), captura tel
 | `node scripts/qa/shot.mjs <url> <png> <w> <h> [scrollY] [full] [espera]` | Captura simples + erros de console. |
 | `node scripts/qa/scroll-states.mjs <url> <pasta> <w> <h> [frações…]` | Percorre a sequência 3D, espera o scrub alcançar e salva PNG + `estados.json` (câmera, corte, arco…). |
 | `node scripts/qa/element-shots.mjs <url> <pasta> <w> <h> "#sel:nome"…` | Rola até cada seção (dispara revelações) e captura o elemento. |
+| `node scripts/qa/overlap-audit.mjs <url> [json] [--shots=pasta]` | Sobreposição na sequência 3D em 390/768/1024/1280/1440: dente/arcada projetados × linhas de texto, texto × texto, cabeçalho e margem. Deve terminar com "Total de achados: 0". |
+| `node scripts/qa/sections-shots.mjs <url> <pasta>` | Telas reais (como o visitante vê) das seções depois da sequência, nas 5 larguras. |
+| `node scripts/qa/cinema-frames.mjs <url> <pasta> <w> <h> [--mobile]` | Quadros da sequência por tempo da timeline. |
 | `npx playwright test tests/visual` | Renderiza os artboards (`tests/visual/dc-render.ts`), captura o site no estado equivalente, gera lado a lado + diferença e verifica métricas de layout. |
 
 ## Roteiro de QA

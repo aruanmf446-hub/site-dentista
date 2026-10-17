@@ -537,6 +537,49 @@ export class Stage3D {
     return { x: ((v.x + 1) / 2) * this.width, y: ((1 - v.y) / 2) * this.height, visible: v.z < 1 };
   }
 
+  /**
+   * Retângulo em px do canvas ocupado pelo que está visível do dente ou da
+   * arcada (amostra de vértices projetados). Usado pelo QA de sobreposição.
+   */
+  screenRect(target: 'tooth' | 'arcade' | THREE.Object3D, step = 7): { left: number; top: number; right: number; bottom: number } | null {
+    const root = target === 'tooth' ? this.toothRoot : target === 'arcade' ? this.arcade : target;
+    if (!root.visible) return null;
+    root.updateWorldMatrix(true, true);
+    const v = new THREE.Vector3();
+    let l = Infinity,
+      t = Infinity,
+      r = -Infinity,
+      b = -Infinity;
+    root.traverseVisible((o) => {
+      const m = o as THREE.Mesh;
+      if (!m.isMesh || !m.geometry) return;
+      const mats = (Array.isArray(m.material) ? m.material : [m.material]) as THREE.Material[];
+      if (mats.every((x) => x.transparent && x.opacity < 0.05)) return;
+      const pos = m.geometry.getAttribute('position');
+      if (!pos) return;
+      for (let i = 0; i < pos.count; i += step) {
+        v.fromBufferAttribute(pos, i).applyMatrix4(m.matrixWorld);
+        // abaixo da gengiva (plano de corte) a raiz não aparece
+        if (target !== 'tooth' || this.rootPlane.distanceToPoint(v) >= 0) {
+          v.project(this.camera);
+          const x = ((v.x + 1) / 2) * this.width;
+          const y = ((1 - v.y) / 2) * this.height;
+          if (x < l) l = x;
+          if (x > r) r = x;
+          if (y < t) t = y;
+          if (y > b) b = y;
+        }
+      }
+    });
+    return l === Infinity ? null : { left: l, top: t, right: r, bottom: b };
+  }
+
+  /** Um retângulo por dente visível da arcada (a curva tem o miolo vazio). */
+  archToothRects(): { left: number; top: number; right: number; bottom: number }[] {
+    if (!this.arcade.visible) return [];
+    return this.archTeeth.map((t) => (t.group.visible ? this.screenRect(t.group, 5) : null)).filter((r): r is NonNullable<typeof r> => !!r);
+  }
+
   get info() {
     const r = this.renderer.info.render;
     return { triangles: r.triangles, calls: r.calls };
