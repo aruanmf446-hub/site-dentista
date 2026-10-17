@@ -11,3 +11,31 @@ Trilha instrumental criada por síntese local para esta peça, sem amostras de m
 
 Locução solicitada:
 Seu site. Sua marca. Personalize sua presença digital e conecte sua clínica aos pacientes. CRM Plus Store.
+
+--------------------------------------------------------------------------------
+COMERCIAL COM LOCUÇÃO — CRM-Plus-Store-comercial-locucao.mp4
+Vídeo vertical 1080 × 1920, 30 fps, 37,5 s, H.264 + AAC (−14 LUFS, pronto para Reels/Stories/Shorts).
+Legendas: CRM-Plus-Store-comercial-locucao.srt (também gravadas na imagem). Capa: CRM-Plus-Store-comercial-capa.jpg.
+
+Roteiro (locução):
+ 0,5 s  Sua clínica merece um site à altura do cuidado que você oferece.            → hero do site no desktop
+ 4,9 s  Com o site odontológico da CRM Plus Store, seus pacientes vivem uma
+        experiência em 3D que acompanha cada rolagem.                               → rolagem 3D real (dente gira e abre em corte)
+12,8 s  O dente se abre em camadas e apresenta os tratamentos e as
+        especialidades da sua clínica.                                              → celular: camadas, tratamentos, arcada
+18,5 s  E tudo é personalizável: cores, logotipo, fotos, textos, equipe,
+        unidades e convênios.                                                       → o mesmo site em 4 cores do design
+25,3 s  No celular, o mesmo cuidado, com contato direto pelo WhatsApp.              → celular: agendamento → WhatsApp
+29,7 s  CRM Plus Store. Seu site, sua marca. Fale com a gente e leve a sua
+        clínica para a internet.                                                    → assinatura final
+
+Transições: continuidade do card (hero → 3D), revelação em arco (motivo do design), deslize lateral,
+revelação circular e arco final.
+
+Todas as telas são capturas do template real (Three.js renderizado no Chromium), quadro a quadro.
+As variantes de cor usam as quatro opções oficiais do design (#5B1626, #7A2438, #2F3B52, #3F5A4C),
+geradas pelo próprio template só para a captura.
+Locução: voz neural pt-BR "Cadu" (Piper, executada localmente via sherpa-onnx); cada fala teve várias
+tomadas e foi escolhida a que a transcrição automática (Whisper) reconheceu sem erros.
+Trilha e efeitos: sintetizados localmente para esta peça, sem amostras de terceiros.
+Arquivos de produção em producao/ (compositor HTML, captura, render, trilha, locução).

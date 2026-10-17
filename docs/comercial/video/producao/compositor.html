@@ -1,0 +1,288 @@
+<!doctype html>
+<html lang="pt-BR"><head><meta charset="utf-8"><title>Comercial</title>
+<style>
+@font-face{font-family:Serif;src:url(/fonts/instrument-serif-latin-400-normal.woff2)}
+@font-face{font-family:Serif;font-style:italic;src:url(/fonts/instrument-serif-latin-400-italic.woff2)}
+@font-face{font-family:Sans;font-weight:100 900;src:url(/fonts/hanken-grotesk-latin-wght-normal.woff2)}
+:root{--bg:#fcfaf8;--ink:#1f1719;--text:#5e5154;--vinho:#5b1626;--on:#fbf4f2;--on-muted:#e3cdd0;--alt:#f4ecea}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{width:1080px;height:1920px;overflow:hidden;background:var(--bg)}
+body{font-family:Sans;color:var(--ink);position:relative}
+.layer{position:absolute;inset:0;overflow:hidden;will-change:transform}
+#LA{background:radial-gradient(1200px 900px at 50% 62%,#fff 0%,var(--bg) 60%,#f6efec 100%)}
+#LB{background:radial-gradient(1100px 1100px at 50% 60%,#6d1c2f 0%,var(--vinho) 55%,#45101d 100%);color:var(--on)}
+#LC{background:radial-gradient(1200px 900px at 50% 55%,#fff 0%,var(--bg) 60%,#f6efec 100%)}
+#LD{--accent:#5b1626;background:radial-gradient(1000px 1000px at 50% 60%,#fbf6f4 0%,var(--alt) 70%)}
+#LE{background:radial-gradient(1000px 1100px at 50% 45%,#6d1c2f 0%,var(--vinho) 55%,#3b0d18 100%);color:var(--on)}
+.brand{position:absolute;top:84px;left:0;right:0;text-align:center}
+.brand b{display:block;font-weight:650;font-size:27px;letter-spacing:.22em}
+.brand span{display:block;margin-top:10px;font-size:16px;font-weight:500;letter-spacing:.2em;opacity:.62}
+.head{position:absolute;top:220px;left:70px;right:70px;text-align:center;font-family:Serif;font-size:96px;line-height:1.02;letter-spacing:-.01em}
+.head i{font-style:italic;color:var(--accent,var(--vinho))}
+#LB .head i,#LE .head i{color:#f3c9d0}
+.head .w{display:inline-block;will-change:transform,opacity}
+.sub{position:absolute;left:0;right:0;text-align:center;font-size:30px;font-weight:500;color:var(--text);letter-spacing:.02em}
+#LB .sub{color:var(--on-muted)}
+.card{position:absolute;left:60px;width:960px;border-radius:22px;background:#fff;overflow:hidden;
+  box-shadow:0 2px 6px rgba(60,20,30,.06),0 30px 80px -20px rgba(70,20,35,.35),0 0 0 1px rgba(60,20,30,.06);transform-origin:50% 50%}
+.bar{height:46px;background:#f3eeec;display:flex;align-items:center;padding:0 20px;gap:9px;border-bottom:1px solid #e6dcd9}
+.bar i{width:13px;height:13px;border-radius:50%;background:#dccfcc;display:block}
+.bar .url{margin-left:22px;flex:1;height:28px;border-radius:14px;background:#fff;font-size:15px;color:#8b7d80;display:flex;align-items:center;padding-left:16px;letter-spacing:.02em}
+.shot{position:relative;width:960px;height:600px;overflow:hidden}
+.shot img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.phone{position:absolute;left:50%;width:552px;height:1158px;margin-left:-276px;border-radius:78px;background:#141012;padding:14px;
+  box-shadow:0 0 0 2px #3a2f33 inset,0 50px 110px -30px rgba(0,0,0,.55),0 0 0 1px rgba(255,255,255,.08)}
+.phone .scr{position:relative;width:524px;height:1130px;border-radius:64px;overflow:hidden;background:#fff}
+.phone .scr img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.phone .notch{position:absolute;top:26px;left:50%;width:150px;height:40px;margin-left:-75px;border-radius:20px;background:#0c090a;z-index:3}
+.chips{position:absolute;top:1388px;left:60px;right:60px;display:flex;flex-wrap:wrap;justify-content:center;gap:16px 16px}
+.chip{font-size:31px;font-weight:550;padding:16px 30px;border-radius:40px;background:#fff;color:var(--ink);border:1.5px solid #e6dcd9;box-shadow:0 8px 24px -12px rgba(70,20,35,.3)}
+.chip.on{background:var(--accent);color:#fff;border-color:transparent}
+.dots{position:absolute;top:1316px;left:0;right:0;display:flex;justify-content:center;gap:26px}
+.dot{width:34px;height:34px;border-radius:50%;box-shadow:0 0 0 0 transparent}
+.toast{position:absolute;display:flex;align-items:center;gap:20px;background:#fff;border-radius:28px;padding:22px 30px 22px 22px;
+  box-shadow:0 30px 60px -20px rgba(60,20,30,.45),0 0 0 1px rgba(60,20,30,.06);font-size:28px;font-weight:600;color:var(--ink)}
+.toast .ic{width:64px;height:64px;border-radius:50%;background:#25d366;display:flex;align-items:center;justify-content:center}
+.toast small{display:block;font-size:22px;font-weight:500;color:var(--text);margin-top:4px}
+#cap{position:absolute;left:0;right:0;bottom:92px;text-align:center;z-index:50}
+#cap span{display:inline-block;max-width:960px;font-size:38px;font-weight:600;line-height:1.25;padding:14px 30px;border-radius:18px;
+  background:rgba(255,255,255,.94);color:var(--ink);box-shadow:0 10px 30px -10px rgba(40,10,20,.35)}
+.end{position:absolute;left:0;right:0;text-align:center}
+</style></head><body>
+
+<div class="layer" id="LA">
+  <div class="brand"><b>CRM PLUS STORE</b><span>SITES PARA CLÍNICAS ODONTOLÓGICAS</span></div>
+  <div class="head" id="h1">Sua clínica merece um site à altura do seu <i>cuidado.</i></div>
+  <div class="head" id="h2">Uma experiência <i>3D</i> que acompanha cada rolagem.</div>
+  <div class="sub" id="s1" style="top:1500px">Design exclusivo &nbsp;•&nbsp; 3D real &nbsp;•&nbsp; WhatsApp</div>
+  <div class="sub" id="s2" style="top:1500px">Rolagem cinematográfica &nbsp;•&nbsp; 3D em tempo real</div>
+  <div class="card" id="cardA" style="top:760px">
+    <div class="bar"><i></i><i></i><i></i><div class="url">suaclinica.com.br</div></div>
+    <div class="shot"><img id="imgA"></div>
+  </div>
+</div>
+
+<div class="layer" id="LB">
+  <div class="brand"><b>CRM PLUS STORE</b><span>SITES PARA CLÍNICAS ODONTOLÓGICAS</span></div>
+  <div class="head" id="h3" style="font-size:88px">Cada tratamento, <i>camada</i> por camada.</div>
+  <div class="phone" id="phB" style="top:520px"><div class="notch"></div><div class="scr"><img id="imgB"></div></div>
+</div>
+
+<div class="layer" id="LC">
+  <div class="brand"><b>CRM PLUS STORE</b><span>SITES PARA CLÍNICAS ODONTOLÓGICAS</span></div>
+  <div class="head" id="h4">Personalize <i>tudo.</i></div>
+  <div class="sub" id="s4" style="top:340px">Sua marca, suas cores, sua clínica.</div>
+  <div class="card" id="cardC" style="top:560px">
+    <div class="bar"><i></i><i></i><i></i><div class="url">suaclinica.com.br</div></div>
+    <div class="shot"><img id="imgC0"><img id="imgC1"></div>
+  </div>
+  <div class="dots" id="dots"></div>
+  <div class="chips" id="chips"></div>
+</div>
+
+<div class="layer" id="LD">
+  <div class="brand"><b>CRM PLUS STORE</b><span>SITES PARA CLÍNICAS ODONTOLÓGICAS</span></div>
+  <div class="head" id="h5">No celular, o mesmo <i>cuidado.</i></div>
+  <div class="phone" id="phD" style="top:520px"><div class="notch"></div><div class="scr"><img id="imgD"></div></div>
+  <div class="toast" id="toast" style="top:1290px;left:470px">
+    <div class="ic"><svg width="38" height="38" viewBox="0 0 24 24" fill="#fff"><path d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2Zm0 18.2a8.2 8.2 0 0 1-4.2-1.2l-.3-.2-3 .8.8-2.9-.2-.3A8.2 8.2 0 1 1 12 20.2Zm4.5-6.1c-.2-.1-1.5-.7-1.7-.8-.2-.1-.4-.1-.6.1l-.8 1c-.1.2-.3.2-.5.1a6.7 6.7 0 0 1-3.3-2.9c-.2-.4.2-.4.7-1.3.1-.2 0-.3 0-.4l-.8-1.8c-.2-.5-.4-.4-.6-.4h-.5a1 1 0 0 0-.7.3 3 3 0 0 0-.9 2.2 5.2 5.2 0 0 0 1.1 2.7 11.8 11.8 0 0 0 4.5 4c1.7.7 2.3.8 3.2.6.5-.1 1.5-.6 1.7-1.2.2-.6.2-1.1.2-1.2-.1-.1-.3-.2-.5-.3Z"/></svg></div>
+    <div>Mensagem pronta<small>direto no WhatsApp da clínica</small></div>
+  </div>
+</div>
+
+<div class="layer" id="LE">
+  <svg id="archE" class="end" style="top:360px;left:50%;margin-left:-330px;width:660px" width="660" height="900" viewBox="0 0 660 900" fill="none">
+    <path id="archP" d="M20 900 V330 A310 310 0 0 1 640 330 V900" stroke="rgba(251,244,242,.28)" stroke-width="2.5"/></svg>
+  <div class="end" id="e1" style="top:520px;font-family:Serif;font-size:250px;line-height:1">CRM</div>
+  <div class="end" id="e2" style="top:790px;font-size:60px;font-weight:650;letter-spacing:.32em;padding-left:.32em">PLUS STORE</div>
+  <div class="end" id="e3" style="top:930px"><span style="display:inline-block;width:120px;height:2px;background:rgba(251,244,242,.5)"></span></div>
+  <div class="end head" id="e4" style="top:990px;left:0;right:0;font-size:104px">Seu site. <i>Sua marca.</i></div>
+  <div class="end" id="e5" style="top:1210px"><span style="display:inline-block;background:var(--on);color:var(--vinho);font-size:36px;font-weight:650;padding:26px 56px;border-radius:60px;box-shadow:0 20px 50px -15px rgba(0,0,0,.5)">Fale com a gente &nbsp;→</span></div>
+  <div class="end" id="e6" style="top:1370px;font-size:24px;font-weight:550;letter-spacing:.24em;color:var(--on-muted)">SITES PERSONALIZADOS PARA CLÍNICAS ODONTOLÓGICAS</div>
+</div>
+
+<div id="cap"><span></span></div>
+
+<script>
+const DUR = 37.5;
+const VO = [[0.5,3.85,'Sua clínica merece um site à altura do cuidado que você oferece.'],
+  [4.85,7.33,'Com o site odontológico da CRM Plus Store, seus pacientes vivem uma experiência em 3D que acompanha cada rolagem.'],
+  [12.75,5.11,'O dente se abre em camadas e apresenta os tratamentos e as especialidades da sua clínica.'],
+  [18.45,6.42,'E tudo é personalizável: cores, logotipo, fotos, textos, equipe, unidades e convênios.'],
+  [25.3,3.9,'No celular, o mesmo cuidado, com contato direto pelo WhatsApp.'],
+  [29.7,6.79,'CRM Plus Store. Seu site, sua marca. Fale com a gente e leve a sua clínica para a internet.']];
+const N = window.FRAMES; // {desk, mob, contato}
+const $ = (id) => document.getElementById(id);
+const cl = (x, a = 0, b = 1) => Math.min(b, Math.max(a, x));
+const p = (t, a, b) => cl((t - a) / (b - a));
+const eo = (x) => 1 - Math.pow(1 - x, 3);
+const eio = (x) => x < .5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2;
+const eback = (x) => { const c = 1.5; return 1 + (c + 1) * Math.pow(x - 1, 3) + c * Math.pow(x - 1, 2); };
+const lerp = (a, b, x) => a + (b - a) * x;
+const pad = (i) => String(i).padStart(4, '0');
+
+// headlines → words
+for (const h of document.querySelectorAll('.head')) {
+  const out = [];
+  for (const node of [...h.childNodes]) {
+    const isI = node.nodeName === 'I';
+    for (const w of node.textContent.split(/(\s+)/)) {
+      if (!w) continue;
+      if (/^\s+$/.test(w)) { out.push(document.createTextNode(' ')); continue; }
+      const s = document.createElement('span'); s.className = 'w';
+      if (isI) { const i = document.createElement('i'); i.textContent = w; s.append(i); } else s.textContent = w;
+      out.push(s);
+    }
+  }
+  h.replaceChildren(...out);
+}
+function words(id, t, tin, tout, dy = 50) {
+  const ws = $(id).querySelectorAll('.w');
+  ws.forEach((w, k) => {
+    const a = eo(p(t, tin + k * 0.07, tin + k * 0.07 + 0.7));
+    const o = tout == null ? 1 : 1 - p(t, tout, tout + 0.35);
+    w.style.opacity = a * o;
+    w.style.transform = `translateY(${(1 - a) * dy - (1 - o) * 20}px)`;
+  });
+}
+function fade(el, t, tin, tout, dy = 30, d = 0.6) {
+  const a = eo(p(t, tin, tin + d)); const o = tout == null ? 1 : 1 - p(t, tout, tout + 0.35);
+  el.style.opacity = a * o; el.style.transform = `translateY(${(1 - a) * dy}px)`;
+}
+
+// S4 setup
+const COLORS = ['#5B1626', '#7A2438', '#2F3B52', '#3F5A4C'];
+COLORS.forEach((c) => { const d = document.createElement('div'); d.className = 'dot'; d.style.background = c; $('dots').append(d); });
+const CH = ['Cores', 'Logotipo', 'Fotos', 'Textos', 'Equipe', 'Unidades', 'Convênios'];
+const vo4 = VO[3][2].toLowerCase();
+const chipT = CH.map((c) => VO[3][0] + (vo4.indexOf(c.toLowerCase()) / vo4.length) * VO[3][1] - 0.1);
+CH.forEach((c) => { const d = document.createElement('div'); d.className = 'chip'; d.textContent = c; $('chips').append(d); });
+const SEQ = [[18.0, 'alva-4.3', 0], [19.35, 'rosa-4.3', 1], [20.35, 'azul-4.3', 2], [21.35, 'verde-4.3', 3],
+  [22.45, 'alva-6', 0], [23.3, 'azul-6', 2], [24.15, 'verde-6', 3]];
+
+// captions: chunks ≤ 40 chars, timed by character share
+const CAPS = [];
+for (const [st, d, txt] of VO) {
+  const chunks = [];
+  for (const cla of txt.match(/[^,.:]+[,.:]?/g).map((x) => x.trim())) {
+    const last = chunks[chunks.length - 1];
+    if (last && !/[.:]$/.test(last) && (last + ' ' + cla).length <= 44) { chunks[chunks.length - 1] = last + ' ' + cla; continue; }
+    if (cla.length <= 44) { chunks.push(cla); continue; }
+    const ws = cla.split(' '); const half = cla.length / 2; let cur = '';
+    for (const w of ws) { if (cur && cur.length + w.length / 2 > half && !chunks.includes(cur) && cur.length < cla.length) { chunks.push(cur); cur = w; } else cur = (cur + ' ' + w).trim(); }
+    chunks.push(cur);
+  }
+  const tot = chunks.reduce((a, c) => a + c.length, 0); let acc = 0;
+  for (const c of chunks) { CAPS.push([st + (acc / tot) * d, st + ((acc + c.length) / tot) * d, c]); acc += c.length; }
+}
+CAPS.forEach((c, i) => { if (CAPS[i + 1] && CAPS[i + 1][0] - c[1] < 0.6) c[1] = CAPS[i + 1][0]; else c[1] += 0.35; });
+
+const pending = [];
+function setImg(el, src) { if (el.dataset.src !== src) { el.dataset.src = src; el.src = src; pending.push(el.decode().catch(() => {})); } }
+
+window.render = async function (t) {
+  pending.length = 0;
+  // ---------- Layer A: S1 + S2 ----------
+  const LA = $('LA'); LA.style.display = t < 13.0 ? '' : 'none';
+  words('h1', t, 0.25, 4.25); words('h2', t, 4.7, 12.1);
+  fade($('s1'), t, 1.6, 4.25); fade($('s2'), t, 5.6, 12.1);
+  {
+    const a = eo(p(t, 0.35, 1.5));
+    let s = lerp(0.9, 1, a) * (1 + 0.035 * p(t, 1.5, 4.6)) ;
+    s *= t > 4.6 ? lerp(1, 1.0, 1) : 1;
+    // S2: card grows a bit and drifts up
+    const g = eio(p(t, 4.4, 5.4));
+    s = lerp(s, 1.0, g) * (1 + 0.06 * eio(p(t, 5.4, 12.6)));
+    const y = (1 - a) * 260 - 80 * g;
+    $('cardA').style.transform = `translateY(${y}px) scale(${s})`;
+    $('cardA').style.opacity = a;
+    const fi = Math.round(cl((t - 4.75) / 7.6) * (N.desk - 1));
+    setImg($('imgA'), `/cap/desk/${pad(fi)}.jpg`);
+  }
+  // ---------- Layer B: S3 (arch reveal) ----------
+  const LB = $('LB');
+  {
+    const r = eio(p(t, 12.15, 12.85));
+    LB.style.display = t > 12.1 && t < 18.6 ? '' : 'none';
+    const top = lerp(1920, -560, r); const rad = 540;
+    LB.style.clipPath = `inset(${Math.max(top, -600)}px 0 0 0 round ${rad}px ${rad}px 0 0)`;
+    if (r >= 1) LB.style.clipPath = 'none';
+    const sx = eio(p(t, 17.95, 18.5));
+    LB.style.transform = `translateX(${-1080 * sx}px)`;
+    words('h3', t, 12.75, null);
+    const a = eo(p(t, 12.55, 13.4));
+    $('phB').style.transform = `translateY(${(1 - a) * 500}px) scale(${lerp(.94, 1, a)})`;
+    const fi = Math.round(cl((t - 12.95) / 5.2) * (N.mob - 1));
+    setImg($('imgB'), `/cap/mob/${pad(fi)}.jpg`);
+  }
+  // ---------- Layer C: S4 ----------
+  const LC = $('LC');
+  {
+    const sx = eio(p(t, 17.95, 18.5));
+    LC.style.display = t > 17.9 && t < 25.5 ? '' : 'none';
+    LC.style.transform = `translateX(${1080 * (1 - sx)}px)`;
+    let k = 0; for (let i = 0; i < SEQ.length; i++) if (t >= SEQ[i][0]) k = i;
+    const cur = SEQ[k], prev = SEQ[Math.max(0, k - 1)];
+    const w = k === 0 ? 1 : eio(p(t, cur[0], cur[0] + 0.5));
+    setImg($('imgC0'), `/cap/desk-${prev[1]}.jpg`); setImg($('imgC1'), `/cap/desk-${cur[1]}.jpg`);
+    // diagonal wipe: polygon sweeping left→right
+    const x = lerp(-30, 130, w);
+    $('imgC1').style.clipPath = `polygon(0 0, ${x}% 0, ${x - 30}% 100%, 0 100%)`;
+    const ci = w > 0.5 ? cur[2] : prev[2];
+    document.documentElement.style.setProperty('--accent', COLORS[ci]);
+    $('dots').querySelectorAll('.dot').forEach((d, i) => {
+      const on = i === ci; d.style.transform = `scale(${on ? 1.25 : 1})`;
+      d.style.boxShadow = on ? `0 0 0 6px #fff, 0 0 0 8px ${COLORS[i]}` : 'none';
+    });
+    fade($('dots'), t, 18.6, null, 20);
+    words('h4', t, 18.4, null); fade($('s4'), t, 18.9, null);
+    $('chips').querySelectorAll('.chip').forEach((c, i) => {
+      const a = eback(p(t, chipT[i], chipT[i] + 0.45));
+      c.style.opacity = cl(a * 1.5); c.style.transform = `translateY(${(1 - a) * 40}px) scale(${lerp(.7, 1, a)})`;
+      c.classList.toggle('on', t > chipT[i] && t < chipT[i] + 0.9);
+    });
+    const g = 1 + 0.03 * p(t, 18.2, 25.1);
+    $('cardC').style.transform = `scale(${g})`;
+  }
+  // ---------- Layer D: S5 (circle reveal) ----------
+  const LD = $('LD');
+  {
+    const r = eio(p(t, 24.85, 25.45));
+    LD.style.display = t > 24.8 && t < 29.9 ? '' : 'none';
+    LD.style.clipPath = r < 1 ? `circle(${lerp(0, 1150, r)}px at 50% 55%)` : 'none';
+    words('h5', t, 25.15, null);
+    const a = eo(p(t, 25.0, 25.8));
+    $('phD').style.transform = `translateY(${(1 - a) * 300}px) scale(${lerp(.9, 1, a)})`;
+    const fi = Math.round(cl((t - 25.5) / 3.6) * (N.contato - 1));
+    setImg($('imgD'), `/cap/contato/${pad(fi)}.jpg`);
+    const ta = eback(p(t, 27.15, 27.7));
+    $('toast').style.opacity = cl(ta * 1.4);
+    $('toast').style.transform = `translate(${(1 - ta) * 80}px, ${(1 - ta) * 30}px) scale(${lerp(.8, 1, ta)})`;
+  }
+  // ---------- Layer E: S6 end card ----------
+  const LE = $('LE');
+  {
+    const r = eio(p(t, 29.1, 29.8));
+    LE.style.display = t > 29.05 ? '' : 'none';
+    const top = lerp(1920, -560, r);
+    LE.style.clipPath = r < 1 ? `inset(${top}px 0 0 0 round 540px 540px 0 0)` : 'none';
+    const P = $('archP'); const L = 2400; P.style.strokeDasharray = L;
+    P.style.strokeDashoffset = L * (1 - eio(p(t, 29.6, 31.4)));
+    fade($('e1'), t, 29.75, null, 50, .8); fade($('e2'), t, 30.05, null, 30, .8); fade($('e3'), t, 30.35, null, 0);
+    words('e4', t, 31.0, null);
+    const ca = eback(p(t, 33.6, 34.2));
+    $('e5').style.opacity = cl(ca * 1.4); $('e5').style.transform = `scale(${lerp(.75, 1, ca) * (1 + 0.025 * Math.sin(Math.max(0, t - 34.2) * 4))})`;
+    fade($('e6'), t, 34.3, null, 20);
+    LE.style.opacity = 1 - p(t, 37.1, 37.5) * 0; // keep
+  }
+  // ---------- captions ----------
+  const c = CAPS.find(([a, b]) => t >= a - 0.05 && t < b);
+  const span = $('cap').firstElementChild;
+  if (c) { span.textContent = c[2]; const a = eo(p(t, c[0] - 0.05, c[0] + 0.15)); span.style.opacity = a; span.style.transform = `translateY(${(1 - a) * 12}px)`; $('cap').style.display = ''; }
+  else $('cap').style.display = 'none';
+  // global fade-out at end
+  document.body.style.opacity = 1;
+  await Promise.all(pending);
+};
+</script>
+</body></html>
