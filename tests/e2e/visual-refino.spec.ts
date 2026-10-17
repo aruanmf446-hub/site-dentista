@@ -110,12 +110,16 @@ test.describe('fotos na resolução da tela', () => {
       test('cada foto recebe um arquivo com pixels suficientes (≥ 95% do necessário)', async ({ page }) => {
         test.setTimeout(150_000);
         await page.goto(url('teste-completo', '/'));
-        const H = await page.evaluate(() => document.documentElement.scrollHeight);
-        for (let y = 0; y < H; y += 600) {
-          await page.evaluate((y) => window.scrollTo({ top: y, behavior: 'instant' }), y);
-          await page.waitForTimeout(40);
+        // cada foto (lazy) é trazida à tela e carregada; o teste mede resolução, não tempo
+        // (uma varredura rápida coincidia com o preparo do 3D e as fotos passavam sem ser pedidas)
+        const n = await page.locator('img').count();
+        for (let k = 0; k < n; k++) {
+          const img = page.locator('img').nth(k);
+          if (!(await img.isVisible())) continue;
+          await img.scrollIntoViewIfNeeded();
+          await img.evaluate((i: HTMLImageElement) => (i.complete && i.naturalWidth ? null : new Promise((r) => i.addEventListener('load', r, { once: true }))));
         }
-        await page.waitForTimeout(1500);
+        await page.waitForTimeout(300);
         const fotos = await page.evaluate(async () =>
           Promise.all(
             Array.from(document.querySelectorAll<HTMLImageElement>('img'))

@@ -269,7 +269,8 @@ test('atualizar a página no meio da sequência retoma o estado da rolagem', asy
   await page.waitForFunction(() => (window as any).__cinema.state.cut > 0.95, null, { timeout: 30_000 });
   const st = await cinemaState(page);
   expect(st.orbit).toBeGreaterThan(25);
-  expect((await sceneObjects(page)).cutVisible).toBe(true);
+  // a geometria completa chega logo depois do 1º quadro (antes só a casca)
+  await expect.poll(async () => (await sceneObjects(page)).cutVisible, { timeout: 30_000 }).toBe(true);
   expect(errors, errors.join('\n')).toEqual([]);
 });
 
