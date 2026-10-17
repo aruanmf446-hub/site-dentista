@@ -66,7 +66,9 @@ export async function initCinema(): Promise<void> {
   const maxDpr = 2;
   let cap = maxDpr; // teto atual (o governador baixa)
   let ratio = dpr(maxDpr);
-  const minRatio = Math.min(ratio, compactAtStart ? 1.25 : 1);
+  // piso: no desktop nunca abaixo da densidade nativa da tela (abaixo disso o
+  // canvas é esticado e fica borrado); no celular, 1,5×
+  const minRatio = Math.min(ratio, compactAtStart ? 1.5 : Math.max(1, window.devicePixelRatio || 1));
 
   /* ---------- posição da rolagem ao atualizar/voltar ---------- */
   // O ScrollTrigger mede a página rolando até o topo na primeira atualização, o
@@ -377,7 +379,7 @@ export async function initCinema(): Promise<void> {
     trigger: root,
     start: 'top top',
     end: 'bottom bottom',
-    scrub: 0.7,
+    scrub: 1.2, // a cena alcança a rolagem com suavidade (não acompanha cada tique da roda)
     animation: tl,
     invalidateOnRefresh: false,
     onUpdate: onTime,
@@ -462,7 +464,8 @@ export async function initCinema(): Promise<void> {
   const io = new IntersectionObserver(([en]) => (inView = !!en?.isIntersecting), { rootMargin: '0px' });
   io.observe(root);
   // governador de resolução: quadros desenhados em sequência com intervalo
-  // > 28 ms (abaixo de ~36 quadros/s) por um tempo → reduz 0,25× (nunca abaixo de minRatio)
+  // > 40 ms (abaixo de ~25 quadros/s) por um tempo → reduz 0,25× (nunca abaixo de minRatio).
+  // 30 quadros/s (navegador em economia de bateria) não conta como lentidão.
   let lastDraw = 0;
   let slow = 0;
   const govern = () => {
@@ -470,7 +473,7 @@ export async function initCinema(): Promise<void> {
     const gap = now - lastDraw;
     lastDraw = now;
     if (gap > 120) return; // não era animação contínua
-    slow = gap > 28 ? slow + 1 : Math.max(0, slow - 1);
+    slow = gap > 40 ? slow + 1 : Math.max(0, slow - 1);
     if (slow > 24 && ratio > minRatio && stage) {
       cap = Math.max(minRatio, Math.round((ratio - 0.25) * 4) / 4);
       slow = 0;
